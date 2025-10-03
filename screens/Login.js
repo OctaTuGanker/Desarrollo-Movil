@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
+import { validateEmail, validatePassword } from '../utils/validation';
+import { showAlert } from '../utils/showAlert';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -10,15 +12,22 @@ export default function Login({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert("Error", "Por favor ingrese ambos campos.");
+    const emailError = validateEmail(email);
+    const passwordError = validatePassword(password);
+
+    if (emailError) {
+      showAlert("Error", emailError);
+      return;
+    }
+    if (!password) {
+      showAlert("Error", "Debe ingresar su contraseña.");
       return;
     }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      Alert.alert("Login exitoso", "Has iniciado sesión correctamente.");
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] }); 
+      showAlert("Login exitoso", "Has iniciado sesión correctamente.");
+      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
     } catch (error) {
       let errorMessage = "Hubo un problema al iniciar sesión.";
       switch (error.code) {
@@ -35,7 +44,7 @@ export default function Login({ navigation }) {
           errorMessage = "Error de conexión, por favor intenta más tarde.";
           break;
       }
-      Alert.alert("Error", errorMessage);
+      showAlert("Error", errorMessage);
     }
   };
 

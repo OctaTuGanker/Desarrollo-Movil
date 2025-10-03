@@ -1,8 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { auth } from '../src/config/firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { 
+  validateEmail, 
+  validatePassword, 
+  validateConfirmPassword, 
+  validateName 
+} from '../utils/validation';
+import { showAlert } from '../utils/showAlert';
 
 export default function SignUp({ navigation }) {
   const [firstName, setFirstName] = useState('');
@@ -14,29 +21,40 @@ export default function SignUp({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignUp = async () => {
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Todos los campos son obligatorios.");
+    const firstNameError = validateName(firstName, "Nombre");
+    if (firstNameError) {
+      showAlert("Error", firstNameError);
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden.");
+    const lastNameError = validateName(lastName, "Apellido");
+    if (lastNameError) {
+      showAlert("Error", lastNameError);
       return;
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
-    if (!passwordRegex.test(password)) {
-      Alert.alert(
-        "Error",
-        "La contraseña debe tener al menos 6 caracteres, incluyendo una letra mayúscula, una minúscula y un número."
-      );
+    const emailError = validateEmail(email);
+    if (emailError) {
+      showAlert("Error", emailError);
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      showAlert("Error", passwordError);
+      return;
+    }
+
+    const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
+    if (confirmPasswordError) {
+      showAlert("Error", confirmPasswordError);
       return;
     }
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("Registro exitoso", "Usuario registrado con éxito.");
-      navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); 
+      showAlert("Registro exitoso", "Usuario registrado con éxito.");
+      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
     } catch (error) {
       let errorMessage = "Hubo un problema al registrar el usuario.";
       switch (error.code) {
@@ -53,7 +71,7 @@ export default function SignUp({ navigation }) {
           errorMessage = "Error de conexión, por favor intenta más tarde.";
           break;
       }
-      Alert.alert("Error", errorMessage);
+      showAlert("Error", errorMessage);
     }
   };
 
@@ -194,4 +212,5 @@ const styles = StyleSheet.create({
     color: '#007AFF',
   },
 });
+
 
