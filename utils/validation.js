@@ -1,4 +1,3 @@
-// utils/validation.js
 
 // Validar email con regex
 export const validateEmail = (email) => {
