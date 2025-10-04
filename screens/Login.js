@@ -12,17 +12,19 @@ export default function Login({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    const emailError = validateEmail(email);
-    const passwordError = validatePassword(password);
+    // Validar si faltan 2 o más campos
+    let emptyFields = 0;
+    if (!email) emptyFields++;
+    if (!password) emptyFields++;
+    if (emptyFields >= 2) {
+      showAlert("Error", "Todos los campos son obligatorios.");
+      return;
+    }
 
-    if (emailError) {
-      showAlert("Error", emailError);
-      return;
-    }
-    if (!password) {
-      showAlert("Error", "Debe ingresar su contraseña.");
-      return;
-    }
+    const emailError = validateEmail(email);
+    if (emailError) { showAlert("Error", emailError); return; }
+
+    if (!password) { showAlert("Error", "Debe ingresar su contraseña."); return; }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -148,4 +150,3 @@ const styles = StyleSheet.create({
     color: '#007AFF',
   },
 });
-

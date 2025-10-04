@@ -21,35 +21,32 @@ export default function SignUp({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignUp = async () => {
-    const firstNameError = validateName(firstName, "Nombre");
-    if (firstNameError) {
-      showAlert("Error", firstNameError);
+    // Validar si faltan 2 o más campos
+    let emptyFields = 0;
+    if (!firstName) emptyFields++;
+    if (!lastName) emptyFields++;
+    if (!email) emptyFields++;
+    if (!password) emptyFields++;
+    if (!confirmPassword) emptyFields++;
+    if (emptyFields >= 2) {
+      showAlert("Error", "Todos los campos son obligatorios.");
       return;
     }
+
+    const firstNameError = validateName(firstName, "Nombre");
+    if (firstNameError) { showAlert("Error", firstNameError); return; }
 
     const lastNameError = validateName(lastName, "Apellido");
-    if (lastNameError) {
-      showAlert("Error", lastNameError);
-      return;
-    }
+    if (lastNameError) { showAlert("Error", lastNameError); return; }
 
     const emailError = validateEmail(email);
-    if (emailError) {
-      showAlert("Error", emailError);
-      return;
-    }
+    if (emailError) { showAlert("Error", emailError); return; }
 
     const passwordError = validatePassword(password);
-    if (passwordError) {
-      showAlert("Error", passwordError);
-      return;
-    }
+    if (passwordError) { showAlert("Error", passwordError); return; }
 
     const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
-    if (confirmPasswordError) {
-      showAlert("Error", confirmPasswordError);
-      return;
-    }
+    if (confirmPasswordError) { showAlert("Error", confirmPasswordError); return; }
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
