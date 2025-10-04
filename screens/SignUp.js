@@ -20,32 +20,40 @@ export default function SignUp({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showRules, setShowRules] = useState(false);
+
+  // Validaciones de contraseña
+  const isMinLength = password.length >= 6;
+  const hasUpperAndLower = /[A-Z]/.test(password) && /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
 
   const handleSignUp = async () => {
-    console.log("handleSignUp se llamó"); // Verifica si entra a la función
-
     if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      console.log("Faltan campos"); // Verifica validación
       Alert.alert("Error", "Todos los campos son obligatorios.");
       return;
     }
 
     if (password !== confirmPassword) {
-      console.log("Contraseñas no coinciden");
       Alert.alert("Error", "Las contraseñas no coinciden.");
       return;
     }
 
+    // Validación de reglas de contraseña
+    if (!isMinLength || !hasUpperAndLower || !hasNumber) {
+      Alert.alert(
+        "Error",
+        "La contraseña no cumple con las reglas de seguridad."
+      );
+      return;
+    }
+
     try {
-      console.log("Intentando crear usuario en Firebase");
       await createUserWithEmailAndPassword(auth, email, password);
-      console.log("Usuario creado"); // Verifica que se creó
       Alert.alert(
         "Registro exitoso",
         `Usuario ${email} registrado correctamente`
       );
     } catch (error) {
-      console.log("Error en Firebase:", error.code);
       Alert.alert("Error", "Hubo un problema al registrar el usuario.");
     }
   };
@@ -104,6 +112,8 @@ export default function SignUp({ navigation }) {
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
+          onFocus={() => setShowRules(true)}
+          onBlur={() => setShowRules(false)}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
           <FontAwesome
@@ -113,6 +123,20 @@ export default function SignUp({ navigation }) {
           />
         </TouchableOpacity>
       </View>
+
+      {showRules && (
+        <View style={styles.rulesContainer}>
+          <Text style={[styles.rule, isMinLength ? styles.valid : styles.invalid]}>
+            - Mínimo 6 caracteres
+          </Text>
+          <Text style={[styles.rule, hasUpperAndLower ? styles.valid : styles.invalid]}>
+            - Usar al menos una letra mayúscula y una minúscula
+          </Text>
+          <Text style={[styles.rule, hasNumber ? styles.valid : styles.invalid]}>
+            - Incluir al menos un número
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.label}>Confirmar Contraseña</Text>
       <View style={styles.inputContainer}>
@@ -135,14 +159,7 @@ export default function SignUp({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Botón Registrarse reemplazando <Button> */}
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => {
-          Alert.alert("Info", "Botón Registrarse presionado");
-          handleSignUp();
-        }}
-      >
+      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>Registrarse</Text>
       </TouchableOpacity>
 
@@ -192,6 +209,19 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
   },
+  rulesContainer: {
+    alignSelf: "flex-start",
+    marginBottom: 10,
+  },
+  rule: {
+    fontSize: 14,
+  },
+  valid: {
+    color: "yellow",
+  },
+  invalid: {
+    color: "#aaa",
+  },
   button: {
     backgroundColor: "#922b21",
     paddingVertical: 10,
@@ -210,3 +240,4 @@ const styles = StyleSheet.create({
     color: "#007AFF",
   },
 });
+
