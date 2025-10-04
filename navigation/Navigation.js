@@ -26,7 +26,10 @@ function Navigation() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName={isAuthenticated ? "Home" : "Login"}>
+      <Stack.Navigator
+        initialRouteName={isAuthenticated ? "Home" : "Login"}
+        screenOptions={{ headerShown: false }}   // 🔴 oculta el header en todas las pantallas
+      >
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="SignUp" component={SignUp} />
         <Stack.Screen name="Home" component={Home} />
@@ -36,4 +39,3 @@ function Navigation() {
 }
 
 export default Navigation;
-

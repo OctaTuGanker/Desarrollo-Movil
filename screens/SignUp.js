@@ -1,80 +1,58 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { auth } from '../src/config/firebaseConfig';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { 
-  validateEmail, 
-  validatePassword, 
-  validateConfirmPassword, 
-  validateName 
-} from '../utils/validation';
-import { showAlert } from '../utils/showAlert';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+} from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
+import { auth } from "../src/config/firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
 export default function SignUp({ navigation }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignUp = async () => {
-    // Validar si faltan 2 o más campos
-    let emptyFields = 0;
-    if (!firstName) emptyFields++;
-    if (!lastName) emptyFields++;
-    if (!email) emptyFields++;
-    if (!password) emptyFields++;
-    if (!confirmPassword) emptyFields++;
-    if (emptyFields >= 2) {
-      showAlert("Error", "Todos los campos son obligatorios.");
+    console.log("handleSignUp se llamó"); // Verifica si entra a la función
+
+    if (!firstName || !lastName || !email || !password || !confirmPassword) {
+      console.log("Faltan campos"); // Verifica validación
+      Alert.alert("Error", "Todos los campos son obligatorios.");
       return;
     }
 
-    const firstNameError = validateName(firstName, "Nombre");
-    if (firstNameError) { showAlert("Error", firstNameError); return; }
-
-    const lastNameError = validateName(lastName, "Apellido");
-    if (lastNameError) { showAlert("Error", lastNameError); return; }
-
-    const emailError = validateEmail(email);
-    if (emailError) { showAlert("Error", emailError); return; }
-
-    const passwordError = validatePassword(password);
-    if (passwordError) { showAlert("Error", passwordError); return; }
-
-    const confirmPasswordError = validateConfirmPassword(password, confirmPassword);
-    if (confirmPasswordError) { showAlert("Error", confirmPasswordError); return; }
+    if (password !== confirmPassword) {
+      console.log("Contraseñas no coinciden");
+      Alert.alert("Error", "Las contraseñas no coinciden.");
+      return;
+    }
 
     try {
+      console.log("Intentando crear usuario en Firebase");
       await createUserWithEmailAndPassword(auth, email, password);
-      showAlert("Registro exitoso", "Usuario registrado con éxito.");
-      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+      console.log("Usuario creado"); // Verifica que se creó
+      Alert.alert(
+        "Registro exitoso",
+        `Usuario ${email} registrado correctamente`
+      );
     } catch (error) {
-      let errorMessage = "Hubo un problema al registrar el usuario.";
-      switch (error.code) {
-        case 'auth/email-already-in-use':
-          errorMessage = "El correo electrónico ya está en uso.";
-          break;
-        case 'auth/invalid-email':
-          errorMessage = "El formato del correo electrónico no es válido.";
-          break;
-        case 'auth/weak-password':
-          errorMessage = "La contraseña es demasiado débil.";
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = "Error de conexión, por favor intenta más tarde.";
-          break;
-      }
-      showAlert("Error", errorMessage);
+      console.log("Error en Firebase:", error.code);
+      Alert.alert("Error", "Hubo un problema al registrar el usuario.");
     }
   };
 
   return (
     <View style={styles.container}>
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
+      <Image source={require("../assets/logo.png")} style={styles.logo} />
       <Text style={styles.title}>Regístrate</Text>
 
       <Text style={styles.label}>Nombre</Text>
@@ -101,7 +79,12 @@ export default function SignUp({ navigation }) {
 
       <Text style={styles.label}>Correo</Text>
       <View style={styles.inputContainer}>
-        <FontAwesome name="envelope" size={20} color="#ccc" style={styles.icon} />
+        <FontAwesome
+          name="envelope"
+          size={20}
+          color="#ccc"
+          style={styles.icon}
+        />
         <TextInput
           style={styles.input}
           placeholder="Ingrese su correo"
@@ -123,7 +106,11 @@ export default function SignUp({ navigation }) {
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
+          <FontAwesome
+            name={showPassword ? "eye-slash" : "eye"}
+            size={20}
+            color="#ccc"
+          />
         </TouchableOpacity>
       </View>
 
@@ -137,16 +124,29 @@ export default function SignUp({ navigation }) {
           onChangeText={setConfirmPassword}
           secureTextEntry={!showConfirmPassword}
         />
-        <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-          <FontAwesome name={showConfirmPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
+        <TouchableOpacity
+          onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+        >
+          <FontAwesome
+            name={showConfirmPassword ? "eye-slash" : "eye"}
+            size={20}
+            color="#ccc"
+          />
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+      {/* Botón Registrarse reemplazando <Button> */}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => {
+          Alert.alert("Info", "Botón Registrarse presionado");
+          handleSignUp();
+        }}
+      >
         <Text style={styles.buttonText}>Registrarse</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
         <Text style={styles.signUpText}>¿Ya tienes cuenta? Inicia sesión</Text>
       </TouchableOpacity>
     </View>
@@ -156,10 +156,10 @@ export default function SignUp({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   logo: {
     width: 100,
@@ -168,22 +168,22 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
   },
   label: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 10,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderBottomWidth: 1,
-    borderColor: '#b9770e',
+    borderColor: "#b9770e",
     marginBottom: 20,
-    width: '100%',
+    width: "100%",
   },
   icon: {
     marginRight: 10,
@@ -193,21 +193,20 @@ const styles = StyleSheet.create({
     height: 40,
   },
   button: {
-    backgroundColor: '#922b21',
+    backgroundColor: "#922b21",
     paddingVertical: 10,
     paddingHorizontal: 40,
     borderRadius: 5,
     marginTop: 10,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   signUpText: {
     marginTop: 20,
-    color: '#007AFF',
+    color: "#007AFF",
   },
 });
-
-
