@@ -1,133 +1,237 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+// Usamos Feather para el email y FontAwesome5 para el candado (mejoramos los imports)
+import { FontAwesome5, FontAwesome, Feather } from '@expo/vector-icons'; 
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
 import { validateEmail, validatePassword } from '../utils/validation';
+import { showAlert } from '../utils/showAlert';
 
-export default function Login({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+// --- COMPONENTE DE PANTALLA DE LOGIN MEJORADO ---
 
-  const [errors, setErrors] = useState({ email: '', password: '' });
-  const [touched, setTouched] = useState({ email: false, password: false });
+export default function LoginScreen({ navigation }) {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
 
-  const validateField = (field, value) => {
-    let error = '';
-    if (field === 'email') error = validateEmail(value) || '';
-    if (field === 'password') error = validatePassword ? (validatePassword(value) || '') : (!value ? 'Debe ingresar su contraseña.' : '');
-    setErrors(prev => ({ ...prev, [field]: error }));
-    return !error;
-  };
+    const handleLogin = async () => {
+        // --- Lógica de Validación (MANTENIDA) ---
+        let emptyFields = 0;
+        if (!email) emptyFields++;
+        if (!password) emptyFields++;
+        
+        if (emptyFields >= 2) {
+            showAlert("Error", "Todos los campos son obligatorios.");
+            return;
+        }
 
-  const handleBlur = (field) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
-    validateField(field, field === 'email' ? email : password);
-  };
+        const emailError = validateEmail(email);
+        if (emailError) { showAlert("Error", emailError); return; }
 
-  const handleChange = (field, value) => {
-    if (field === 'email') setEmail(value);
-    if (field === 'password') setPassword(value);
-    if (touched[field]) validateField(field, value);
-  };
+        if (!password) { showAlert("Error", "Debe ingresar su contraseña."); return; }
 
-  const handleLogin = async () => {
-    const emailOk = validateField('email', email);
-    const passOk = validateField('password', password);
-    setTouched({ email: true, password: true });
-    if (!emailOk || !passOk) return;
+        // --- Lógica de Autenticación de Firebase (MANTENIDA) ---
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            showAlert("Login exitoso", "Has iniciado sesión correctamente.");
+            // Redirección exitosa a la pantalla 'Home'
+            navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+        } catch (error) {
+            let errorMessage = "Hubo un problema al iniciar sesión.";
+            switch (error.code) {
+                case 'auth/invalid-email':
+                case 'auth/wrong-password':
+                case 'auth/user-not-found':
+                    errorMessage = "Credenciales incorrectas o usuario no encontrado.";
+                    break;
+                case 'auth/network-request-failed':
+                    errorMessage = "Error de conexión, por favor intenta más tarde.";
+                    break;
+                default:
+                    console.error("Error de Firebase:", error);
+            }
+            showAlert("Error", errorMessage);
+        }
+    };
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // showAlert("Login exitoso", "Has iniciado sesión correctamente.");
-      navigation.dispatch(  
-        CommonActions.reset({  
-          index: 0,  
-          routes: [  
-            { name: 'MainTabs' }
-          ],  
-        })  
-      );
-    } catch (error) {
-      let errorMessage = "Hubo un problema al iniciar sesión.";
-      switch (error.code) {
-        case 'auth/invalid-email':
-          errorMessage = "El formato del correo electrónico no es válido.";
-          break;
-        case 'auth/wrong-password':
-          errorMessage = "La contraseña es incorrecta.";
-          break;
-        case 'auth/user-not-found':
-          errorMessage = "No se encontró un usuario con este correo.";
-          break;
-        case 'auth/network-request-failed':
-          errorMessage = "Error de conexión, por favor intenta más tarde.";
-          break;
-      }
-      Alert.alert("Error", errorMessage);
-    }
-  };
+    return (
+        // Contenedor que establece el fondo gris claro
+        <View style={styles.pageContainer}> 
+            <View style={styles.card}> {/* La tarjeta blanca central */}
+                
+                {/* Logo */}
+                <Image 
+                    source={require('../assets/logo.png')} 
+                    style={styles.logo} 
+                />
+                
+                <Text style={styles.title}>Iniciar Sesión</Text> 
 
-  return (
-    <View style={styles.container}>
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
-      <Text style={styles.title}>Iniciar sesión</Text>
+                {/* Campo Correo Electrónico */}
+                <Text style={styles.label}>Correo Electrónico</Text> 
+                <View style={styles.inputWrapper}>
+                    <Feather name="mail" size={20} color="#888" style={styles.inputIcon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="tu.correo@ejemplo.com"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                    />
+                </View>
 
-      <Text style={styles.label}>Correo</Text>
-      <View style={[styles.inputContainer, touched.email && errors.email ? styles.inputContainerError : null]}>
-        <FontAwesome name="envelope" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su correo"
-          value={email}
-          onChangeText={(v) => handleChange('email', v)}
-          onBlur={() => handleBlur('email')}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-      </View>
-      {touched.email && errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+                {/* Campo Contraseña */}
+                <Text style={styles.label}>Contraseña</Text>
+                <View style={styles.inputWrapper}>
+                    <FontAwesome5 name="lock" size={18} color="#888" style={styles.inputIcon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="**********"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword}
+                    />
+                    {/* Botón Ocultar/Mostrar Contraseña */}
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.togglePassword}>
+                        <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#888" />
+                    </TouchableOpacity>
+                </View>
+                
+                {/* Enlace: ¿No tienes cuenta? Registrarse */}
+                <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.linkRegister}>
+                    <Text style={styles.linkText}>¿No tienes cuenta? <Text style={styles.linkBold}>Registrarse.</Text></Text>
+                </TouchableOpacity>
 
-      <Text style={styles.label}>Contraseña</Text>
-      <View style={[styles.inputContainer, touched.password && errors.password ? styles.inputContainerError : null]}>
-        <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Ingrese su contraseña"
-          value={password}
-          onChangeText={(v) => handleChange('password', v)}
-          onBlur={() => handleBlur('password')}
-          secureTextEntry={!showPassword}
-        />
-        <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
-        </TouchableOpacity>
-      </View>
-      {touched.password && errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+                {/* Botón Iniciar Sesión */}
+                <TouchableOpacity style={styles.buttonPrimary} onPress={handleLogin}>
+                    <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Ingresar</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.signUpText}>¿No tienes cuenta aún? Regístrate</Text>
-      </TouchableOpacity>
-    </View>
-  );
+                {/* Enlace: ¿Olvidaste tu contraseña? */}
+                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.linkForgotPassword}>
+                    <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
+                </TouchableOpacity>
+                
+                {/* Footer / Derechos de autor */}
+                <Text style={styles.footerText}>
+                    © 2025 - Instituto Superior Del Milagro. Todos los derechos reservados.
+                </Text>
+            </View>
+        </View>
+    );
 }
 
+// --- ESTILOS MEJORADOS (COINCIDE CON EL DISEÑO DE TARJETA) ---
+
+const COLOR_PRIMARY = '#8D1E2A'; // El color vino/rojo oscuro del diseño
+const COLOR_BACKGROUND = '#F0F2F5'; // Fondo gris claro
+
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#fff' },
-  logo: { width: 100, height: 100, marginBottom: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  label: { alignSelf: 'flex-start', fontSize: 16, fontWeight: 'bold', marginTop: 10 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1.25, borderColor: '#b9770e', marginBottom: 6, width: '100%', paddingBottom: 4 },
-  inputContainerError: { borderColor: '#ff6b6b' },
-  icon: { marginRight: 10 },
-  input: { flex: 1, height: 40 },
-  errorText: { alignSelf: 'flex-start', color: '#ff6b6b', fontSize: 12, marginBottom: 12 },
-  button: { backgroundColor: '#922b21', paddingVertical: 10, paddingHorizontal: 40, borderRadius: 5, marginTop: 20 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  signUpText: { marginTop: 20, color: '#007AFF' },
+    pageContainer: {
+        flex: 1,
+        backgroundColor: COLOR_BACKGROUND, 
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    card: {
+        width: '100%',
+        maxWidth: 400, // Limita el ancho de la tarjeta
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        padding: 30,
+        // Añade una sombra sutil para el efecto de tarjeta
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5, 
+        alignItems: 'center',
+    },
+    logo: {
+        width: 100,
+        height: 100,
+        marginBottom: 25,
+        resizeMode: 'contain',
+    },
+    title: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        marginBottom: 35,
+        color: '#333',
+    },
+    label: {
+        alignSelf: 'flex-start',
+        marginBottom: 10,
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#333',
+    },
+    // Contenedor que simula el borde externo del input
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1, 
+        borderColor: '#E0E0E0', // Borde gris claro
+        borderRadius: 5,
+        paddingHorizontal: 12,
+        height: 50,
+        marginBottom: 20,
+        width: '100%',
+    },
+    inputIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        height: '100%',
+        fontSize: 16,
+        color: '#333',
+    },
+    togglePassword: {
+        paddingLeft: 10,
+    },
+
+    // --- Estilos de Botón Primario ---
+    buttonPrimary: {
+        backgroundColor: COLOR_PRIMARY,
+        paddingVertical: 15,
+        borderRadius: 5,
+        width: '100%', 
+        alignItems: 'center',
+        marginTop: 15,
+        marginBottom: 15,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    
+    // --- Estilos de Enlaces ---
+    linkText: {
+        color: COLOR_PRIMARY, // Usa el color vino para los enlaces
+        fontSize: 14,
+        textAlign: 'center',
+    },
+    linkBold: {
+        fontWeight: 'bold',
+    },
+    linkRegister: {
+        alignSelf: 'center', // Centrado horizontal
+        marginBottom: 5,
+    },
+    linkForgotPassword: {
+        marginTop: 10,
+        marginBottom: 30,
+    },
+    
+    // --- Estilo de Footer ---
+    footerText: {
+        marginTop: 40,
+        fontSize: 12,
+        color: '#888',
+        textAlign: 'center',
+    },
 });

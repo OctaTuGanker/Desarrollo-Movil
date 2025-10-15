@@ -9,6 +9,7 @@ export const validateEmail = (email) => {
 
 // Validar contraseña (mínimo 6 caracteres, mayúscula, minúscula y número)
 export const validatePassword = (password) => {
+<<<<<<< HEAD
   if (!password) return "La contraseña es obligatoria.";
   
   const errors = [];
@@ -30,6 +31,13 @@ export const validatePassword = (password) => {
     return `Falta: ${errors.join(", ")}.`;
   }
   
+=======
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{6,}$/;
+  if (!password) return "La contraseña es obligatoria.";
+  if (!passwordRegex.test(password)) {
+    return "La contraseña debe tener al menos 6 caracteres, incluyendo una letra mayúscula, una minúscula y un número.";
+  }
+>>>>>>> f06b223 (feat(auth): Estilos finales y correcciones de login.)
   return null;
 };
 
