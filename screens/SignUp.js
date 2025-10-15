@@ -11,6 +11,7 @@ import {
 import { FontAwesome } from "@expo/vector-icons";
 import { auth } from "../src/config/firebaseConfig";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { validateEmail, validatePassword } from "../utils/validation";
 
 export default function SignUp({ navigation }) {
   const [firstName, setFirstName] = useState("");
@@ -22,28 +23,102 @@ export default function SignUp({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showRules, setShowRules] = useState(false);
 
-  // Validaciones de contraseña
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [touched, setTouched] = useState({
+    firstName: false,
+    lastName: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
+
+  // Validaciones de contraseña para las reglas visuales
   const isMinLength = password.length >= 6;
-  const hasUpperAndLower = /[A-Z]/.test(password) && /[a-z]/.test(password);
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
   const hasNumber = /\d/.test(password);
 
+  const validateField = (field, value) => {
+    let error = "";
+
+    switch (field) {
+      case "firstName":
+        if (!value.trim()) error = "El nombre es obligatorio.";
+        else if (value.trim().length < 2) error = "Mínimo 2 caracteres.";
+        break;
+      case "lastName":
+        if (!value.trim()) error = "El apellido es obligatorio.";
+        else if (value.trim().length < 2) error = "Mínimo 2 caracteres.";
+        break;
+      case "email":
+        error = validateEmail(value) || "";
+        break;
+      case "password":
+        error = validatePassword(value) || "";
+        break;
+      case "confirmPassword":
+        if (!value) error = "Debe confirmar su contraseña.";
+        else if (value !== password) error = "Las contraseñas no coinciden.";
+        break;
+    }
+
+    setErrors((prev) => ({ ...prev, [field]: error }));
+    return !error;
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const values = { firstName, lastName, email, password, confirmPassword };
+    validateField(field, values[field]);
+  };
+
+  const handleChange = (field, value) => {
+    switch (field) {
+      case "firstName":
+        setFirstName(value);
+        break;
+      case "lastName":
+        setLastName(value);
+        break;
+      case "email":
+        setEmail(value);
+        break;
+      case "password":
+        setPassword(value);
+        break;
+      case "confirmPassword":
+        setConfirmPassword(value);
+        break;
+    }
+    if (touched[field]) {
+      validateField(field, value);
+    }
+  };
+
   const handleSignUp = async () => {
-    if (!firstName || !lastName || !email || !password || !confirmPassword) {
-      Alert.alert("Error", "Todos los campos son obligatorios.");
-      return;
-    }
+    // Marcar todos como tocados
+    setTouched({
+      firstName: true,
+      lastName: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
 
-    if (password !== confirmPassword) {
-      Alert.alert("Error", "Las contraseñas no coinciden.");
-      return;
-    }
+    // Validar todos los campos
+    const firstNameOk = validateField("firstName", firstName);
+    const lastNameOk = validateField("lastName", lastName);
+    const emailOk = validateField("email", email);
+    const passwordOk = validateField("password", password);
+    const confirmPasswordOk = validateField("confirmPassword", confirmPassword);
 
-    // Validación de reglas de contraseña
-    if (!isMinLength || !hasUpperAndLower || !hasNumber) {
-      Alert.alert(
-        "Error",
-        "La contraseña no cumple con las reglas de seguridad."
-      );
+    if (!firstNameOk || !lastNameOk || !emailOk || !passwordOk || !confirmPasswordOk) {
       return;
     }
 
@@ -53,8 +128,21 @@ export default function SignUp({ navigation }) {
         "Registro exitoso",
         `Usuario ${email} registrado correctamente`
       );
+      navigation.navigate("Login");
     } catch (error) {
-      Alert.alert("Error", "Hubo un problema al registrar el usuario.");
+      let errorMessage = "Hubo un problema al registrar el usuario.";
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "Este correo ya está registrado.";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "El formato del correo no es válido.";
+          break;
+        case "auth/weak-password":
+          errorMessage = "La contraseña es muy débil.";
+          break;
+      }
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -64,29 +152,56 @@ export default function SignUp({ navigation }) {
       <Text style={styles.title}>Regístrate</Text>
 
       <Text style={styles.label}>Nombre</Text>
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          touched.firstName && errors.firstName
+            ? styles.inputContainerError
+            : null,
+        ]}
+      >
         <FontAwesome name="user" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Ingrese su nombre"
           value={firstName}
-          onChangeText={setFirstName}
+          onChangeText={(v) => handleChange("firstName", v)}
+          onBlur={() => handleBlur("firstName")}
         />
       </View>
+      {touched.firstName && errors.firstName ? (
+        <Text style={styles.errorText}>{errors.firstName}</Text>
+      ) : null}
 
       <Text style={styles.label}>Apellido</Text>
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          touched.lastName && errors.lastName
+            ? styles.inputContainerError
+            : null,
+        ]}
+      >
         <FontAwesome name="user" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Ingrese su apellido"
           value={lastName}
-          onChangeText={setLastName}
+          onChangeText={(v) => handleChange("lastName", v)}
+          onBlur={() => handleBlur("lastName")}
         />
       </View>
+      {touched.lastName && errors.lastName ? (
+        <Text style={styles.errorText}>{errors.lastName}</Text>
+      ) : null}
 
       <Text style={styles.label}>Correo</Text>
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          touched.email && errors.email ? styles.inputContainerError : null,
+        ]}
+      >
         <FontAwesome
           name="envelope"
           size={20}
@@ -97,23 +212,37 @@ export default function SignUp({ navigation }) {
           style={styles.input}
           placeholder="Ingrese su correo"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(v) => handleChange("email", v)}
+          onBlur={() => handleBlur("email")}
           keyboardType="email-address"
           autoCapitalize="none"
         />
       </View>
+      {touched.email && errors.email ? (
+        <Text style={styles.errorText}>{errors.email}</Text>
+      ) : null}
 
       <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          touched.password && errors.password
+            ? styles.inputContainerError
+            : null,
+        ]}
+      >
         <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Ingrese su contraseña"
           value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
+          onChangeText={(v) => handleChange("password", v)}
           onFocus={() => setShowRules(true)}
-          onBlur={() => setShowRules(false)}
+          onBlur={() => {
+            setShowRules(false);
+            handleBlur("password");
+          }}
+          secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
           <FontAwesome
@@ -123,29 +252,57 @@ export default function SignUp({ navigation }) {
           />
         </TouchableOpacity>
       </View>
+      {touched.password && errors.password ? (
+        <Text style={styles.errorText}>{errors.password}</Text>
+      ) : null}
 
       {showRules && (
         <View style={styles.rulesContainer}>
-          <Text style={[styles.rule, isMinLength ? styles.valid : styles.invalid]}>
+          <Text
+            style={[styles.rule, isMinLength ? styles.valid : styles.invalid]}
+          >
             - Mínimo 6 caracteres
           </Text>
-          <Text style={[styles.rule, hasUpperAndLower ? styles.valid : styles.invalid]}>
-            - Usar al menos una letra mayúscula y una minúscula
+          <Text
+            style={[
+              styles.rule,
+              hasUpper ? styles.valid : styles.invalid,
+            ]}
+          >
+            - Usar al menos una letra mayúscula
           </Text>
-          <Text style={[styles.rule, hasNumber ? styles.valid : styles.invalid]}>
+          <Text
+            style={[
+              styles.rule,
+              hasLower ? styles.valid : styles.invalid,
+            ]}
+          >
+            - Usar al menos una letra minúscula
+          </Text>
+          <Text
+            style={[styles.rule, hasNumber ? styles.valid : styles.invalid]}
+          >
             - Incluir al menos un número
           </Text>
         </View>
       )}
 
       <Text style={styles.label}>Confirmar Contraseña</Text>
-      <View style={styles.inputContainer}>
+      <View
+        style={[
+          styles.inputContainer,
+          touched.confirmPassword && errors.confirmPassword
+            ? styles.inputContainerError
+            : null,
+        ]}
+      >
         <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Confirme su contraseña"
           value={confirmPassword}
-          onChangeText={setConfirmPassword}
+          onChangeText={(v) => handleChange("confirmPassword", v)}
+          onBlur={() => handleBlur("confirmPassword")}
           secureTextEntry={!showConfirmPassword}
         />
         <TouchableOpacity
@@ -158,6 +315,9 @@ export default function SignUp({ navigation }) {
           />
         </TouchableOpacity>
       </View>
+      {touched.confirmPassword && errors.confirmPassword ? (
+        <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+      ) : null}
 
       <TouchableOpacity style={styles.button} onPress={handleSignUp}>
         <Text style={styles.buttonText}>Registrarse</Text>
@@ -197,10 +357,14 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.25,
     borderColor: "#b9770e",
-    marginBottom: 20,
+    marginBottom: 6,
     width: "100%",
+    paddingBottom: 4,
+  },
+  inputContainerError: {
+    borderColor: "#ff6b6b",
   },
   icon: {
     marginRight: 10,
@@ -208,6 +372,12 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     height: 40,
+  },
+  errorText: {
+    alignSelf: "flex-start",
+    color: "#ff6b6b",
+    fontSize: 12,
+    marginBottom: 12,
   },
   rulesContainer: {
     alignSelf: "flex-start",
@@ -217,7 +387,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   valid: {
-    color: "yellow",
+    color: "#4caf50",
   },
   invalid: {
     color: "#aaa",
@@ -240,4 +410,3 @@ const styles = StyleSheet.create({
     color: "#007AFF",
   },
 });
-
