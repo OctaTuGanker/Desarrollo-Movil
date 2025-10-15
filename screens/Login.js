@@ -40,8 +40,15 @@ export default function Login({ navigation }) {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // No necesitamos reset ni replace
-      // Navigation.js detectará automáticamente isAuthenticated y mostrará MainTabs
+      // showAlert("Login exitoso", "Has iniciado sesión correctamente.");
+      navigation.dispatch(  
+        CommonActions.reset({  
+          index: 0,  
+          routes: [  
+            { name: 'MainTabs' }
+          ],  
+        })  
+      );
     } catch (error) {
       let errorMessage = "Hubo un problema al iniciar sesión.";
       switch (error.code) {
