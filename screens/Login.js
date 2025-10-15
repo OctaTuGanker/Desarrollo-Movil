@@ -4,31 +4,51 @@ import { FontAwesome } from '@expo/vector-icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
 import { validateEmail, validatePassword } from '../utils/validation';
-import { showAlert } from '../utils/showAlert';
+// Puedes seguir usando showAlert para errores globales de login
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = async () => {
-    // Validar si faltan 2 o más campos
-    let emptyFields = 0;
-    if (!email) emptyFields++;
-    if (!password) emptyFields++;
-    if (emptyFields >= 2) {
-      showAlert("Error", "Todos los campos son obligatorios.");
-      return;
+  const [errors, setErrors] = useState({ email: '', password: '' });
+  const [touched, setTouched] = useState({ email: false, password: false });
+
+  const validateField = (field, value) => {
+    let error = '';
+    if (field === 'email') {
+      error = validateEmail(value) || '';
     }
+    if (field === 'password') {
+      // Si ya tenés validatePassword, úsala; si no, una mínima:
+      error = validatePassword ? (validatePassword(value) || '') : (!value ? 'Debe ingresar su contraseña.' : '');
+    }
+    setErrors(prev => ({ ...prev, [field]: error }));
+    return !error;
+  };
 
-    const emailError = validateEmail(email);
-    if (emailError) { showAlert("Error", emailError); return; }
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateField(field, field === 'email' ? email : password);
+  };
 
-    if (!password) { showAlert("Error", "Debe ingresar su contraseña."); return; }
+  const handleChange = (field, value) => {
+    if (field === 'email') setEmail(value);
+    if (field === 'password') setPassword(value);
+    // Si ya fue tocado, revalida al escribir
+    if (touched[field]) validateField(field, value);
+  };
+
+  const handleLogin = async () => {
+    // Validar ambos antes de enviar
+    const emailOk = validateField('email', email);
+    const passOk = validateField('password', password);
+    setTouched({ email: true, password: true });
+    if (!emailOk || !passOk) return;
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      showAlert("Login exitoso", "Has iniciado sesión correctamente.");
+      // showAlert("Login exitoso", "Has iniciado sesión correctamente.");
       navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
     } catch (error) {
       let errorMessage = "Hubo un problema al iniciar sesión.";
@@ -46,7 +66,7 @@ export default function Login({ navigation }) {
           errorMessage = "Error de conexión, por favor intenta más tarde.";
           break;
       }
-      showAlert("Error", errorMessage);
+      // showAlert("Error", errorMessage);
     }
   };
 
@@ -56,32 +76,46 @@ export default function Login({ navigation }) {
       <Text style={styles.title}>Iniciar sesión</Text>
 
       <Text style={styles.label}>Correo</Text>
-      <View style={styles.inputContainer}>
+      <View style={[
+        styles.inputContainer,
+        touched.email && errors.email ? styles.inputContainerError : null
+      ]}>
         <FontAwesome name="envelope" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Ingrese su correo"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(v) => handleChange('email', v)}
+          onBlur={() => handleBlur('email')}
           keyboardType="email-address"
           autoCapitalize="none"
         />
       </View>
+      {touched.email && errors.email ? (
+        <Text style={styles.errorText}>{errors.email}</Text>
+      ) : null}
 
       <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.inputContainer}>
+      <View style={[
+        styles.inputContainer,
+        touched.password && errors.password ? styles.inputContainerError : null
+      ]}>
         <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
           placeholder="Ingrese su contraseña"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(v) => handleChange('password', v)}
+          onBlur={() => handleBlur('password')}
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
           <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
         </TouchableOpacity>
       </View>
+      {touched.password && errors.password ? (
+        <Text style={styles.errorText}>{errors.password}</Text>
+      ) : null}
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Ingresar</Text>
@@ -121,11 +155,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
+    borderBottomWidth: 1.25,
     borderColor: '#b9770e',
-    marginBottom: 20,
+    marginBottom: 6,
     width: '100%',
+    paddingBottom: 4
   },
+  inputContainerError: { borderColor: '#ff6b6b' },
   icon: {
     marginRight: 10,
   },
@@ -133,6 +169,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
   },
+  errorText: { alignSelf: 'flex-start', color: '#ff6b6b', fontSize: 12, marginBottom: 12 },
   button: {
     backgroundColor: '#922b21',
     paddingVertical: 10,
