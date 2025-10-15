@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
 import { validateEmail, validatePassword } from '../utils/validation';
-// Puedes seguir usando showAlert para errores globales de login
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -16,13 +15,8 @@ export default function Login({ navigation }) {
 
   const validateField = (field, value) => {
     let error = '';
-    if (field === 'email') {
-      error = validateEmail(value) || '';
-    }
-    if (field === 'password') {
-      // Si ya tenés validatePassword, úsala; si no, una mínima:
-      error = validatePassword ? (validatePassword(value) || '') : (!value ? 'Debe ingresar su contraseña.' : '');
-    }
+    if (field === 'email') error = validateEmail(value) || '';
+    if (field === 'password') error = validatePassword ? (validatePassword(value) || '') : (!value ? 'Debe ingresar su contraseña.' : '');
     setErrors(prev => ({ ...prev, [field]: error }));
     return !error;
   };
@@ -35,12 +29,10 @@ export default function Login({ navigation }) {
   const handleChange = (field, value) => {
     if (field === 'email') setEmail(value);
     if (field === 'password') setPassword(value);
-    // Si ya fue tocado, revalida al escribir
     if (touched[field]) validateField(field, value);
   };
 
   const handleLogin = async () => {
-    // Validar ambos antes de enviar
     const emailOk = validateField('email', email);
     const passOk = validateField('password', password);
     setTouched({ email: true, password: true });
@@ -48,8 +40,8 @@ export default function Login({ navigation }) {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // showAlert("Login exitoso", "Has iniciado sesión correctamente.");
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      // No necesitamos reset ni replace
+      // Navigation.js detectará automáticamente isAuthenticated y mostrará MainTabs
     } catch (error) {
       let errorMessage = "Hubo un problema al iniciar sesión.";
       switch (error.code) {
@@ -66,7 +58,7 @@ export default function Login({ navigation }) {
           errorMessage = "Error de conexión, por favor intenta más tarde.";
           break;
       }
-      // showAlert("Error", errorMessage);
+      Alert.alert("Error", errorMessage);
     }
   };
 
@@ -76,10 +68,7 @@ export default function Login({ navigation }) {
       <Text style={styles.title}>Iniciar sesión</Text>
 
       <Text style={styles.label}>Correo</Text>
-      <View style={[
-        styles.inputContainer,
-        touched.email && errors.email ? styles.inputContainerError : null
-      ]}>
+      <View style={[styles.inputContainer, touched.email && errors.email ? styles.inputContainerError : null]}>
         <FontAwesome name="envelope" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
@@ -91,15 +80,10 @@ export default function Login({ navigation }) {
           autoCapitalize="none"
         />
       </View>
-      {touched.email && errors.email ? (
-        <Text style={styles.errorText}>{errors.email}</Text>
-      ) : null}
+      {touched.email && errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
       <Text style={styles.label}>Contraseña</Text>
-      <View style={[
-        styles.inputContainer,
-        touched.password && errors.password ? styles.inputContainerError : null
-      ]}>
+      <View style={[styles.inputContainer, touched.password && errors.password ? styles.inputContainerError : null]}>
         <FontAwesome name="lock" size={20} color="#ccc" style={styles.icon} />
         <TextInput
           style={styles.input}
@@ -113,9 +97,7 @@ export default function Login({ navigation }) {
           <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
         </TouchableOpacity>
       </View>
-      {touched.password && errors.password ? (
-        <Text style={styles.errorText}>{errors.password}</Text>
-      ) : null}
+      {touched.password && errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Ingresar</Text>
@@ -129,61 +111,16 @@ export default function Login({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  label: {
-    alignSelf: 'flex-start',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1.25,
-    borderColor: '#b9770e',
-    marginBottom: 6,
-    width: '100%',
-    paddingBottom: 4
-  },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: '#fff' },
+  logo: { width: 100, height: 100, marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  label: { alignSelf: 'flex-start', fontSize: 16, fontWeight: 'bold', marginTop: 10 },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1.25, borderColor: '#b9770e', marginBottom: 6, width: '100%', paddingBottom: 4 },
   inputContainerError: { borderColor: '#ff6b6b' },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    height: 40,
-  },
+  icon: { marginRight: 10 },
+  input: { flex: 1, height: 40 },
   errorText: { alignSelf: 'flex-start', color: '#ff6b6b', fontSize: 12, marginBottom: 12 },
-  button: {
-    backgroundColor: '#922b21',
-    paddingVertical: 10,
-    paddingHorizontal: 40,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  signUpText: {
-    marginTop: 20,
-    color: '#007AFF',
-  },
+  button: { backgroundColor: '#922b21', paddingVertical: 10, paddingHorizontal: 40, borderRadius: 5, marginTop: 20 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  signUpText: { marginTop: 20, color: '#007AFF' },
 });

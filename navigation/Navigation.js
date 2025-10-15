@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Pantallas
 import Login from '../screens/Login';
@@ -18,43 +20,32 @@ import Cuenta from '../screens/Cuenta';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// 🔹 Menú inferior con íconos personalizados
+// 🔹 Menú inferior con íconos y safe area
 function BottomTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#922b21', // Color activo
-        tabBarInactiveTintColor: 'gray',  // Color inactivo
+        tabBarActiveTintColor: '#922b21',
+        tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
           backgroundColor: '#fff',
           borderTopWidth: 0.5,
           borderTopColor: '#ccc',
-          height: 60,
-          paddingBottom: 5,
+          paddingBottom: insets.bottom + 5,
+          height: 60 + insets.bottom, // asegura espacio para barra de sistema
         },
-        // Íconos según la pestaña
         tabBarIcon: ({ color, size, focused }) => {
           let iconName;
-
           switch (route.name) {
-            case 'Inicio':
-              iconName = focused ? 'home' : 'home-outline';
-              break;
-            case 'Cursos':
-              iconName = focused ? 'book' : 'book-outline';
-              break;
-            case 'Admisiones':
-              iconName = focused ? 'school' : 'school-outline';
-              break;
-            case 'Vida Estudiantil':
-              iconName = focused ? 'calendar' : 'calendar-outline';
-              break;
-            case 'Cuenta':
-              iconName = focused ? 'person' : 'person-outline';
-              break;
+            case 'Inicio': iconName = focused ? 'home' : 'home-outline'; break;
+            case 'Cursos': iconName = focused ? 'book' : 'book-outline'; break;
+            case 'Admisiones': iconName = focused ? 'school' : 'school-outline'; break;
+            case 'Vida Estudiantil': iconName = focused ? 'calendar' : 'calendar-outline'; break;
+            case 'Cuenta': iconName = focused ? 'person' : 'person-outline'; break;
           }
-
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
@@ -80,17 +71,19 @@ export default function Navigation() {
   }, []);
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
-          <>
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="SignUp" component={SignUp} />
-          </>
-        ) : (
-          <Stack.Screen name="MainTabs" component={BottomTabs} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          {!isAuthenticated ? (
+            <>
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="SignUp" component={SignUp} />
+            </>
+          ) : (
+            <Stack.Screen name="MainTabs" component={BottomTabs} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }
