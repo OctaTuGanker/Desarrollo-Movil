@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+<<<<<<< HEAD
 import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -61,10 +62,24 @@ function BottomTabs() {
 
 // 🔹 Navegación principal (Login / Registro / App)
 export default function Navigation() {
+=======
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { onAuthStateChanged } from 'firebase/auth';  
+import { auth } from '../src/config/firebaseConfig';  
+import Login from '../screens/Login';
+import SignUp from '../screens/SignUp';
+import Home from '../screens/Home';
+
+const Stack = createStackNavigator();
+
+function Navigation() {
+>>>>>>> f06b223 (feat(auth): Estilos finales y correcciones de login.)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
+<<<<<<< HEAD
       setIsAuthenticated(!!user);
     });
     return unsubscribe;
@@ -87,3 +102,30 @@ export default function Navigation() {
     </SafeAreaProvider>
   );
 }
+=======
+      if (user) {
+        setIsAuthenticated(true); 
+      } else {
+        setIsAuthenticated(false); 
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName={isAuthenticated ? "Home" : "Login"}
+        screenOptions={{ headerShown: false }}   // 🔴 oculta el header en todas las pantallas
+      >
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="SignUp" component={SignUp} />
+        <Stack.Screen name="Home" component={Home} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default Navigation;
+>>>>>>> f06b223 (feat(auth): Estilos finales y correcciones de login.)
