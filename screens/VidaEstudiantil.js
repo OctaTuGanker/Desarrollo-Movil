@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function VidaEstudiantil() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Vida Estudiantil / Cronograma</Text>
+      <Text style={styles.text}>🗓️ Vida Estudiantil / Cronograma</Text>
     </View>
   );
 }

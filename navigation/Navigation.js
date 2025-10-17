@@ -20,7 +20,7 @@ import Cuenta from '../screens/Cuenta';
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// 🔹 Menú inferior con íconos y safe area
+// Menú inferior con íconos y safe area
 function BottomTabs() {
   const insets = useSafeAreaInsets();
 
@@ -59,7 +59,7 @@ function BottomTabs() {
   );
 }
 
-// 🔹 Navegación principal (Login / Registro / App)
+// Navegación principal (Login / Registro / App)
 export default function Navigation() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
