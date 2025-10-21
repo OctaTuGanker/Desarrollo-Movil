@@ -1,14 +1,21 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../src/config/firebaseConfig';
-import { validateEmail, validatePassword } from '../utils/validation';
-import { showAlert } from '../utils/showAlert';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+} from "react-native";
+import { FontAwesome } from "@expo/vector-icons";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../src/config/firebaseConfig";
+import { validateEmail, validatePassword } from "../utils/validation";
+import { showAlert } from "../utils/showAlert";
 
 export default function Login({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
@@ -22,27 +29,33 @@ export default function Login({ navigation }) {
     }
 
     const emailError = validateEmail(email);
-    if (emailError) { showAlert("Error", emailError); return; }
+    if (emailError) {
+      showAlert("Error", emailError);
+      return;
+    }
 
-    if (!password) { showAlert("Error", "Debe ingresar su contraseña."); return; }
+    if (!password) {
+      showAlert("Error", "Debe ingresar su contraseña.");
+      return;
+    }
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
       showAlert("Login exitoso", "Has iniciado sesión correctamente.");
-      navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+      navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     } catch (error) {
       let errorMessage = "Hubo un problema al iniciar sesión.";
       switch (error.code) {
-        case 'auth/invalid-email':
+        case "auth/invalid-email":
           errorMessage = "El formato del correo electrónico no es válido.";
           break;
-        case 'auth/wrong-password':
+        case "auth/wrong-password":
           errorMessage = "La contraseña es incorrecta.";
           break;
-        case 'auth/user-not-found':
+        case "auth/user-not-found":
           errorMessage = "No se encontró un usuario con este correo.";
           break;
-        case 'auth/network-request-failed':
+        case "auth/network-request-failed":
           errorMessage = "Error de conexión, por favor intenta más tarde.";
           break;
       }
@@ -52,12 +65,17 @@ export default function Login({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image source={require('../assets/logo.png')} style={styles.logo} />
+      <Image source={require("../assets/logo.png")} style={styles.logo} />
       <Text style={styles.title}>Iniciar sesión</Text>
 
       <Text style={styles.label}>Correo</Text>
       <View style={styles.inputContainer}>
-        <FontAwesome name="envelope" size={20} color="#ccc" style={styles.icon} />
+        <FontAwesome
+          name="envelope"
+          size={20}
+          color="#ccc"
+          style={styles.icon}
+        />
         <TextInput
           style={styles.input}
           placeholder="Ingrese su correo"
@@ -79,15 +97,24 @@ export default function Login({ navigation }) {
           secureTextEntry={!showPassword}
         />
         <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-          <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#ccc" />
+          <FontAwesome
+            name={showPassword ? "eye-slash" : "eye"}
+            size={20}
+            color="#ccc"
+          />
         </TouchableOpacity>
       </View>
-
+      <TouchableOpacity
+        onPress={() => navigation.navigate("SignUp")}
+        style={{ alignSelf: "flex-end" }}
+      >
+        <Text style={styles.signUpText}>¿No tienes cuenta aún? Regístrate</Text>
+      </TouchableOpacity>
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Ingresar</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+      <TouchableOpacity
+        onPress={() => navigation.navigate("SignUp")}>
         <Text style={styles.signUpText}>¿No tienes cuenta aún? Regístrate</Text>
       </TouchableOpacity>
     </View>
@@ -97,10 +124,10 @@ export default function Login({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   logo: {
     width: 100,
@@ -109,22 +136,22 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 20,
   },
   label: {
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 10,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderBottomWidth: 1,
-    borderColor: '#b9770e',
+    borderColor: "#b9770e",
     marginBottom: 20,
-    width: '100%',
+    width: "100%",
   },
   icon: {
     marginRight: 10,
@@ -134,19 +161,19 @@ const styles = StyleSheet.create({
     height: 40,
   },
   button: {
-    backgroundColor: '#922b21',
+    backgroundColor: "#922b21",
     paddingVertical: 10,
     paddingHorizontal: 40,
     borderRadius: 5,
     marginTop: 20,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   signUpText: {
     marginTop: 20,
-    color: '#007AFF',
+    color: "#c42f02ff",
   },
 });
