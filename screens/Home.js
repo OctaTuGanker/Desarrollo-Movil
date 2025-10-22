@@ -15,15 +15,16 @@ import { auth } from "../src/config/firebaseConfig";
 
 const TAB_HEIGHT = 65; // altura del Tab Navigator (60 + 5)
 
-export default function Home({ navigation }) {
+// En screens/Home.js
+
+
+export default function Home({ navigation }) { // <-- Recibe la prop de navegación
   const [showWelcome, setShowWelcome] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    // Oculta el menú inferior durante la bienvenida
     navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
-
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -31,19 +32,17 @@ export default function Home({ navigation }) {
         useNativeDriver: true,
       }).start(() => {
         setShowWelcome(false);
-        // Vuelve a mostrar el menú inferior
         navigation.getParent()?.setOptions({
           tabBarStyle: {
             backgroundColor: "#fff",
             borderTopWidth: 0.5,
             borderTopColor: "#ccc",
-            height: 60,
-            paddingBottom: 5,
+            height: 60 + insets.bottom,
+            paddingBottom: insets.bottom > 0 ? insets.bottom - 5 : 5,
           },
         });
       });
     }, 2000);
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -104,17 +103,26 @@ export default function Home({ navigation }) {
           </View>
         </View>
 
-        {/* Botones principales */}
+        {/* Botones principales*/}
         <View style={styles.buttonsContainer}>
-          <TouchableOpacity style={styles.card}>
+          <TouchableOpacity 
+            style={styles.card}
+            onPress={() => navigation.navigate('Cursos')}
+          >
             <Text style={styles.cardText}>Nuestros Cursos</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.card}>
+          <TouchableOpacity 
+            style={styles.card}
+            onPress={() => navigation.navigate('Admisiones')}
+          >
             <Text style={styles.cardText}>Admisiones</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.card}>
+          <TouchableOpacity 
+            style={styles.card}
+            onPress={() => navigation.navigate('Vida Estudiantil')}
+          >
             <Text style={styles.cardText}>Vida Estudiantil</Text>
           </TouchableOpacity>
         </View>
@@ -123,6 +131,7 @@ export default function Home({ navigation }) {
   );
 }
 
+// --- Tus estilos se mantienen igual ---
 const styles = StyleSheet.create({
   welcomeContainer: {
     flex: 1,
