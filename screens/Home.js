@@ -131,7 +131,7 @@ export default function Home({ navigation }) { // <-- Recibe la prop de navegaci
   );
 }
 
-// --- Tus estilos se mantienen igual ---
+// --- estilos ---
 const styles = StyleSheet.create({
   welcomeContainer: {
     flex: 1,

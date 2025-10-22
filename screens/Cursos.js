@@ -67,7 +67,7 @@ const cursosData = [
     },
 ];
 
-// --- CAMBIO 1: Recibir la prop "navigation" ---
+// --- Recibir la prop "navigation" ---
 const CursoCard = ({ curso, navigation }) => {
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isPlanExpanded, setIsPlanExpanded] = useState(false);
@@ -121,7 +121,6 @@ const CursoCard = ({ curso, navigation }) => {
                                 {curso.planDeEstudio.map((materia, index) => (
                                     <Text key={index} style={styles.planItem}>• {materia}</Text>
                                 ))}
-                                {/* --- CAMBIO 2: Usar navigation.jumpTo en el onPress --- */}
                                 <TouchableOpacity
                                     style={styles.inscriptionButton}
                                     onPress={() => navigation.jumpTo('Admisiones')}
@@ -138,7 +137,7 @@ const CursoCard = ({ curso, navigation }) => {
 };
 
 
-// --- CAMBIO 3: Recibir "navigation" y pasarla a CursoCard ---
+// --- Recibir "navigation" y pasarla a CursoCard ---
 export default function Cursos({ navigation }) {
     return (
         <SafeAreaView style={styles.safeArea}>

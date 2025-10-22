@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
-// --- FUNCIÓN PARA DETERMINAR EL ESTADO DE LA ADMISIÓN ---
+// --- Funcion para determinar en que mes estamos y si podemos inscribirnos o no---
 const getAdmissionStatus = () => {
     const now = new Date();
     const currentMonth = now.getMonth(); // 0 = Enero, 11 = Diciembre
@@ -20,7 +20,7 @@ const getAdmissionStatus = () => {
         title: '',
         message: '',
         icon: 'time-outline',
-        color: '#6c757d' // Color por defecto (gris)
+        color: '#6c757d' // Color por defectogris
     };
 
     switch (currentMonth) {
@@ -73,7 +73,6 @@ export default function Admisiones() {
         if (type === 'whatsapp') {
             url = 'whatsapp://send?phone=+5493876305671&text=Hola,%20quisiera%20más%20información%20sobre%20las%20admisiones.';
         } else if (type === 'email') {
-            // CORRECCIÓN: Se debe agregar "mailto:" para que funcione
             url = 'mailto:gudio.octavio@gmail.com?subject=Consulta sobre Admisiones';
         }
 
@@ -97,7 +96,7 @@ export default function Admisiones() {
                     <Text style={styles.headerSubtitle}>Sé un estudiante del Instituto Superior del Milagro.</Text>
                 </View>
 
-                {/* --- NUEVO PANEL DE ESTADO DE ADMISIÓN --- */}
+                {/* --- Panel de estado de admision --- */}
                 <View style={[styles.statusBox, { backgroundColor: admissionStatus.color }]}>
                     <View style={styles.statusBoxContent}>
                         <Ionicons name={admissionStatus.icon} size={40} color="#fff" style={styles.statusIcon} />
@@ -108,7 +107,7 @@ export default function Admisiones() {
                     </View>
                 </View>
 
-                {/* Sección de Requisitos */}
+                {/* Sección de requisitos */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Requisitos de Inscripción</Text>
                     <View style={styles.listItem}><Text style={styles.bullet}>•</Text><Text style={styles.listItemText}>Título secundario (original y copia).</Text></View>
@@ -118,7 +117,7 @@ export default function Admisiones() {
                     <View style={styles.listItem}><Text style={styles.bullet}>•</Text><Text style={styles.listItemText}>Completar el formulario de pre-inscripción online.</Text></View>
                 </View>
 
-                {/* Sección de Pasos */}
+                {/* Sección de pasos */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Pasos a Seguir</Text>
                     <Text style={styles.stepText}><Text style={styles.stepNumber}>1. Pre-inscripción:</Text> Completa nuestro formulario online con tus datos personales y académicos.</Text>
@@ -127,7 +126,7 @@ export default function Admisiones() {
                     <Text style={styles.stepText}><Text style={styles.stepNumber}>4. Matriculación:</Text> Una vez aprobado el proceso, podrás abonar la matrícula para asegurar tu vacante.</Text>
                 </View>
                 
-                {/* Sección de Contacto */}
+                {/* Sección de contacto */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>¿Tienes Dudas?</Text>
                     <Text style={styles.contactText}>Nuestro equipo está listo para ayudarte en cada paso del proceso.</Text>
@@ -151,7 +150,7 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 26, fontWeight: 'bold', color: COLOR_PRIMARY, marginTop: 10 },
     headerSubtitle: { fontSize: 16, color: '#555', textAlign: 'center', marginTop: 5 },
 
-    // --- NUEVOS ESTILOS PARA EL PANEL DE ESTADO ---
+    // --- Estilos para el panel de estados ---
     statusBox: {
         borderRadius: 12,
         padding: 15,
@@ -168,7 +167,7 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
     statusTextContainer: {
-        flex: 1, // Para que el texto ocupe el espacio restante
+        flex: 1,
     },
     statusTitle: {
         color: '#fff',
@@ -181,8 +180,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         lineHeight: 20,
     },
-    // --- FIN DE NUEVOS ESTILOS ---
-
+    // --- Estilos para las Secciones de Contenido ---
     section: { backgroundColor: '#f9f9f9', borderRadius: 8, padding: 20, marginBottom: 20 },
     sectionTitle: { fontSize: 20, fontWeight: '700', color: '#333', marginBottom: 15 },
     listItem: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 10 },
