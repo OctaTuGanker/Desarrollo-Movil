@@ -1,3 +1,5 @@
+// screens/Home.js
+
 import React, { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -12,18 +14,18 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "firebase/auth";
 import { auth } from "../src/config/firebaseConfig";
+// --- 1. IMPORTAR EL BACKGROUND WRAPPER ---
+import BackgroundWrapper from "../src/components/BackgroundWrapper"; 
 
 const TAB_HEIGHT = 65; // altura del Tab Navigator (60 + 5)
 
-// En screens/Home.js
-
-
-export default function Home({ navigation }) { // <-- Recibe la prop de navegación
+export default function Home({ navigation }) {
   const [showWelcome, setShowWelcome] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
+    // Lógica para ocultar/mostrar la barra de pestañas (tab bar)
     navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
@@ -32,6 +34,7 @@ export default function Home({ navigation }) { // <-- Recibe la prop de navegaci
         useNativeDriver: true,
       }).start(() => {
         setShowWelcome(false);
+        // Lógica para restaurar la barra de pestañas
         navigation.getParent()?.setOptions({
           tabBarStyle: {
             backgroundColor: "#fff",
@@ -56,6 +59,7 @@ export default function Home({ navigation }) { // <-- Recibe la prop de navegaci
   };
 
   if (showWelcome) {
+    // 3. La pantalla de bienvenida se deja sin el BackgroundWrapper
     return (
       <Animated.View style={[styles.welcomeContainer, { opacity: fadeAnim }]}>
         <Image
@@ -70,160 +74,96 @@ export default function Home({ navigation }) { // <-- Recibe la prop de navegaci
     );
   }
 
+  // --- 2. REEMPLAZO DE SafeAreaView POR BackgroundWrapper ---
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContainer,
-          { paddingBottom: insets.bottom + TAB_HEIGHT + 20 },
-        ]}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerText}>ISDEM</Text>
-          <TouchableOpacity onPress={handleLogOut}>
-            <Text style={styles.menuIcon}>☰</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Imagen principal */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={require("../assets/banner.jpg")}
-            style={styles.banner}
-            resizeMode="cover"
-          />
-          <View style={styles.overlay}>
-            <Text style={styles.bannerTitle}>
-              Formando los profesionales del futuro
-            </Text>
-            <Text style={styles.bannerSubtitle}>
-              con excelencia académica y valores.
-            </Text>
+    // Reemplazamos la SafeAreaView principal por el BackgroundWrapper.
+    // Usamos View adentro para simular el comportamiento de SafeAreaView si es necesario, 
+    // y para aplicar el fondo blanco (¡quitamos el fondo blanco para ver el patrón!)
+    <BackgroundWrapper> 
+      {/* Usamos View para aplicar los insets de SafeArea y el color de fondo si lo deseas. 
+          Aquí la he quitado para que el fondo del patrón se vea, ¡pero el header debe estar dentro de la zona segura! */}
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+        
+        <ScrollView
+          contentContainerStyle={[
+            // Es importante quitar el backgroundColor: '#fff' de scrollContainer si lo tuviera,
+            // pero lo tiene aplicado en el styles.scrollContainer, ¡lo quitamos en la sección de estilos!
+            styles.scrollContainer,
+            { paddingBottom: insets.bottom + TAB_HEIGHT + 20 },
+          ]}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerText}>ISDEM</Text>
+            <TouchableOpacity onPress={handleLogOut}>
+              <Text style={styles.menuIcon}>☰</Text>
+            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Botones principales*/}
-        <View style={styles.buttonsContainer}>
-          <TouchableOpacity 
-            style={styles.card}
-            onPress={() => navigation.navigate('Cursos')}
-          >
-            <Text style={styles.cardText}>Nuestros Cursos</Text>
-          </TouchableOpacity>
+          {/* Resto del contenido de tu Home */}
+          {/* Imagen principal */}
+          <View style={styles.imageContainer}>
+            <Image
+              source={require("../assets/banner.jpg")}
+              style={styles.banner}
+              resizeMode="cover"
+            />
+            <View style={styles.overlay}>
+              <Text style={styles.bannerTitle}>
+                Formando los profesionales del futuro
+              </Text>
+              <Text style={styles.bannerSubtitle}>
+                con excelencia académica y valores.
+              </Text>
+            </View>
+          </View>
 
-          <TouchableOpacity 
-            style={styles.card}
-            onPress={() => navigation.navigate('Admisiones')}
-          >
-            <Text style={styles.cardText}>Admisiones</Text>
-          </TouchableOpacity>
+          {/* Botones principales*/}
+          <View style={styles.buttonsContainer}>
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={() => navigation.navigate('Cursos')}
+            >
+              <Text style={styles.cardText}>Nuestros Cursos</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.card}
-            onPress={() => navigation.navigate('Vida Estudiantil')}
-          >
-            <Text style={styles.cardText}>Vida Estudiantil</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={() => navigation.navigate('Admisiones')}
+            >
+              <Text style={styles.cardText}>Admisiones</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.card}
+              onPress={() => navigation.navigate('Vida Estudiantil')}
+            >
+              <Text style={styles.cardText}>Vida Estudiantil</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </BackgroundWrapper>
   );
 }
 
-// --- estilos ---
+// --- AJUSTE DE ESTILOS ---
+// Debes **eliminar el fondo blanco** de los contenedores que no quieras que lo tengan.
 const styles = StyleSheet.create({
+  // ... estilos de bienvenida sin cambios ...
   welcomeContainer: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#fff", // Dejar el fondo blanco en la pantalla de bienvenida
     alignItems: "center",
     justifyContent: "center",
   },
-  logoWelcome: {
-    width: 120,
-    height: 120,
-    marginBottom: 20,
-  },
-  titleWelcome: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#922b21",
-    textAlign: "center",
-  },
+  // ...
+
+  // AJUSTE CRÍTICO: QUITAR EL FONDO BLANCO DEL SCROLLVIEW
   scrollContainer: {
     flexGrow: 1,
-    backgroundColor: "#fff",
+    // CAMBIO: Quitar backgroundColor: "#fff" para que se vea el fondo de patrón
+    backgroundColor: "transparent", 
   },
-  header: {
-    backgroundColor: "#922b21",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-  },
-  headerText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  menuIcon: {
-    color: "#fff",
-    fontSize: 24,
-  },
-  imageContainer: {
-    marginTop: 15,
-    alignSelf: "center",
-    borderRadius: 10,
-    overflow: "hidden",
-    width: "90%",
-  },
-  banner: {
-    width: "100%",
-    height: 180,
-    borderRadius: 10,
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  bannerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  bannerSubtitle: {
-    color: "#fff",
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  buttonsContainer: {
-    marginTop: 25,
-    alignItems: "center",
-  },
-  card: {
-    width: "85%",
-    paddingVertical: 15,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginVertical: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    alignItems: "center",
-  },
-  cardText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
+  // ... el resto de tus estilos se mantienen ...
 });
