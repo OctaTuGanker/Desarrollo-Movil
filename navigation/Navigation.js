@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../src/config/firebaseConfig';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+
+// Context
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 
 // Pantallas
 import Login from '../screens/Login';
@@ -35,7 +36,7 @@ function BottomTabs() {
           borderTopWidth: 0.5,
           borderTopColor: '#ccc',
           paddingBottom: insets.bottom + 5,
-          height: 60 + insets.bottom, // asegura espacio para barra de sistema
+          height: 60 + insets.bottom,
         },
         tabBarIcon: ({ color, size, focused }) => {
           let iconName;
@@ -59,31 +60,56 @@ function BottomTabs() {
   );
 }
 
-// Navegación principal (Login / Registro / App)
-export default function Navigation() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+// Navegador interno que usa el contexto
+function AppNavigator() {
+  const { user, loading } = useAuth();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      setIsAuthenticated(!!user);
-    });
-    return unsubscribe;
-  }, []);
+  // Mostrar loading mientras se verifica la autenticación
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#922b21" />
+      </View>
+    );
+  }
 
   return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!user ? (
+        <>
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="SignUp" component={SignUp} />
+        </>
+      ) : (
+        <>
+          <Stack.Screen name="MainTabs" component={BottomTabs} />
+          {/* Se agrega SignUp y Login para poder acceder cuando estas logueado */}
+          <Stack.Screen name="SignUp" component={SignUp} />
+          {/* <Stack.Screen name="Login" component={Login} /> */}
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
+
+// Navegación principal con AuthProvider
+export default function Navigation() {
+  return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {!isAuthenticated ? (
-            <>
-              <Stack.Screen name="Login" component={Login} />
-              <Stack.Screen name="SignUp" component={SignUp} />
-            </>
-          ) : (
-            <Stack.Screen name="MainTabs" component={BottomTabs} />
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+      <AuthProvider>
+        <NavigationContainer>
+          <AppNavigator />
+        </NavigationContainer>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+});
