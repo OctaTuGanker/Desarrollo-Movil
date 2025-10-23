@@ -12,17 +12,21 @@ import {
 import { FontAwesome5, FontAwesome, Feather } from "@expo/vector-icons";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../src/config/firebaseConfig";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import {
   validateEmail,
   validatePassword,
 } from "../utils/validation";
+import { useAuth } from "../contexts/AuthContext"; // Importar el hook
 
 export default function SignUp({ navigation }) {
+  const { user, role } = useAuth(); // Obtener usuario y rol actual
   const [firstName, setFirstName] = useState("");
   const [lastName,  setLastName]  = useState("");
   const [email,     setEmail]     = useState("");
   const [password,  setPassword]  = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState("Alumno"); // Rol del nuevo usuario
 
   const [showPassword,        setShowPassword]        = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -133,9 +137,40 @@ export default function SignUp({ navigation }) {
     }
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("Registro exitoso", `Usuario ${email} registrado correctamente`);
-      navigation.navigate("Login");
+      // Crear usuario en Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser = userCredential.user;
+
+      // Guardar datos adicionales en Firestore
+      const db = getFirestore();
+      await setDoc(doc(db, "users", newUser.uid), {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim().toLowerCase(),
+        role: newUserRole, // Usa el rol seleccionado (Alumno por defecto, o Profesor si lo eligió un profesor)
+        createdAt: serverTimestamp(),
+        ...(user && { createdBy: user.uid }), // Si hay usuario logueado, guarda quién lo creó
+      });
+
+      // Si un admin creó la cuenta, debe volver a loguearse
+      if (user && (role === "Admin" || role === "Profesor")) {
+        Alert.alert(
+          "Usuario registrado",
+          `${firstName} ha sido registrado como ${newUserRole}. Debes volver a iniciar sesión.`,
+          [
+            {
+              text: "OK",
+              onPress: async () => {
+                await auth.signOut();
+                // navigation.navigate("Login");
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert("Registro exitoso", `Bienvenido ${firstName}, tu cuenta ha sido creada como ${newUserRole}.`);
+        navigation.navigate("Login");
+      }
     } catch (error) {
       let errorMessage = "Hubo un problema al registrar el usuario.";
       switch (error.code) {
@@ -149,6 +184,7 @@ export default function SignUp({ navigation }) {
           errorMessage = "La contraseña es muy débil.";
           break;
         default:
+          errorMessage = error.message;
           break;
       }
       Alert.alert("Error", errorMessage);
@@ -220,6 +256,42 @@ export default function SignUp({ navigation }) {
           {touched.email && errors.email ? (
             <Text style={styles.errorText}>{errors.email}</Text>
           ) : null}
+
+          {/* Selector de Rol - SOLO si hay un admin logueado */}
+          {user && role === "Admin" && (
+            <View style={styles.roleContainer}>
+              <Text style={styles.roleLabel}>Tipo de usuario:</Text>
+              <View style={styles.roleButtons}>
+                <TouchableOpacity
+                  style={[styles.roleButton, newUserRole === "Alumno" && styles.roleButtonActive]}
+                  onPress={() => setNewUserRole("Alumno")}
+                >
+                  <FontAwesome5 
+                    name="user-graduate" 
+                    size={20} 
+                    color={newUserRole === "Alumno" ? "#fff" : COLOR_PRIMARY} 
+                  />
+                  <Text style={[styles.roleButtonText, newUserRole === "Alumno" && styles.roleButtonTextActive]}>
+                    Alumno
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.roleButton, newUserRole === "Profesor" && styles.roleButtonActive]}
+                  onPress={() => setNewUserRole("Profesor")}
+                >
+                  <FontAwesome5 
+                    name="chalkboard-teacher" 
+                    size={20} 
+                    color={newUserRole === "Profesor" ? "#fff" : COLOR_PRIMARY} 
+                  />
+                  <Text style={[styles.roleButtonText, newUserRole === "Profesor" && styles.roleButtonTextActive]}>
+                    Profesor
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Password */}
           <View style={[
@@ -370,6 +442,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     paddingVertical: 0,
+  },
+  // Estilos para selector de rol
+  roleContainer: {
+    width: "100%",
+    marginBottom: 16,
+  },
+  roleLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+  },
+  roleButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: COLOR_PRIMARY,
+    backgroundColor: "#fff",
+    gap: 8,
+  },
+  roleButtonActive: {
+    backgroundColor: COLOR_PRIMARY,
+  },
+  roleButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLOR_PRIMARY,
+  },
+  roleButtonTextActive: {
+    color: "#fff",
   },
   rulesContainer: {
     alignSelf: "flex-start",
