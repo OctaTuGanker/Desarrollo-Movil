@@ -12,24 +12,24 @@ import {
 import { FontAwesome5, FontAwesome, Feather } from "@expo/vector-icons";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../src/config/firebaseConfig";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import {
   validateEmail,
   validatePassword,
 } from "../utils/validation";
+import { useAuth } from "../contexts/AuthContext"; // Importar el hook
 
 import BackgroundWrapper from '../src/components/BackgroundWrapper'; 
 
 
 export default function SignUp({ navigation }) {
-  const [firstName, setFirstName] = useState("");
-  const [lastName,  setLastName]  = useState("");
-  const [email,     setEmail]     = useState("");
-  const [password,  setPassword]  = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showPassword,        setShowPassword]        = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showRules,           setShowRules]           = useState(false);
+  const { user, role } = useAuth(); // Obtener usuario y rol actual
+  const [firstName, setFirstName] = useState("");
+  const [lastName,  setLastName]  = useState("");
+  const [email,     setEmail]     = useState("");
+  const [password,  setPassword]  = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState("Alumno"); // Rol del nuevo usuario
 
   const [errors, setErrors] = useState({
     firstName: "",
@@ -143,28 +143,60 @@ export default function SignUp({ navigation }) {
       return;
     }
 
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      Alert.alert("Registro exitoso", `Usuario ${email} registrado correctamente`);
-      navigation.navigate("Login");
-    } catch (error) {
-      let errorMessage = "Hubo un problema al registrar el usuario.";
-      switch (error.code) {
-        case "auth/email-already-in-use":
-          errorMessage = "Este correo ya está registrado.";
-          break;
-        case "auth/invalid-email":
-          errorMessage = "El formato del correo no es válido.";
-          break;
-        case "auth/weak-password":
-          errorMessage = "La contraseña es muy débil.";
-          break;
-        default:
-          break;
-      }
-      Alert.alert("Error", errorMessage);
-    }
-  };
+    try {
+      // Crear usuario en Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const newUser = userCredential.user;
+
+      // Guardar datos adicionales en Firestore
+      const db = getFirestore();
+      await setDoc(doc(db, "users", newUser.uid), {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim().toLowerCase(),
+        role: newUserRole, // Usa el rol seleccionado (Alumno por defecto, o Profesor si lo eligió un profesor)
+        createdAt: serverTimestamp(),
+        ...(user && { createdBy: user.uid }), // Si hay usuario logueado, guarda quién lo creó
+      });
+
+      // Si un admin creó la cuenta, debe volver a loguearse
+      if (user && (role === "Admin" || role === "Profesor")) {
+        Alert.alert(
+          "Usuario registrado",
+          `${firstName} ha sido registrado como ${newUserRole}. Debes volver a iniciar sesión.`,
+          [
+            {
+              text: "OK",
+              onPress: async () => {
+                await auth.signOut();
+                // navigation.navigate("Login");
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert("Registro exitoso", `Bienvenido ${firstName}, tu cuenta ha sido creada como ${newUserRole}.`);
+        navigation.navigate("Login");
+      }
+    } catch (error) {
+      let errorMessage = "Hubo un problema al registrar el usuario.";
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          errorMessage = "Este correo ya está registrado.";
+          break;
+        case "auth/invalid-email":
+          errorMessage = "El formato del correo no es válido.";
+          break;
+        case "auth/weak-password":
+          errorMessage = "La contraseña es muy débil.";
+          break;
+        default:
+          errorMessage = error.message;
+          break;
+      }
+      Alert.alert("Error", errorMessage);
+    }
+  };
 
   return (
     // 🛑 ELIMINAMOS EL VIEW pageContainer y usamos BackgroundWrapper como raíz
@@ -236,32 +268,68 @@ export default function SignUp({ navigation }) {
             <Text style={styles.errorText}>{errors.email}</Text>
           ) : null}
 
-          {/* Password */}
-          <View style={[
-            styles.inputContainerNew,
-            touched.password && errors.password ? styles.inputContainerError : null
-          ]}>
-            <FontAwesome5 name="lock" size={16} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputNew}
-              placeholder="Contraseña"
-              value={password}
-              onChangeText={(v) => handleChange("password", v)}
-              onFocus={() => setShowRules(true)}
-              onBlur={() => {
-                setShowRules(false);
-                handleBlur("password");
-              }}
-              secureTextEntry={!showPassword}
-              returnKeyType="next"
-            />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={18} color="#888" />
-            </TouchableOpacity>
-          </View>
-          {touched.password && errors.password ? (
-            <Text style={styles.errorText}>{errors.password}</Text>
-          ) : null}
+          {/* Selector de Rol - SOLO si hay un admin logueado */}
+          {user && role === "Admin" && (
+            <View style={styles.roleContainer}>
+              <Text style={styles.roleLabel}>Tipo de usuario:</Text>
+              <View style={styles.roleButtons}>
+                <TouchableOpacity
+                  style={[styles.roleButton, newUserRole === "Alumno" && styles.roleButtonActive]}
+                  onPress={() => setNewUserRole("Alumno")}
+                >
+                  <FontAwesome5 
+                    name="user-graduate" 
+                    size={20} 
+                    color={newUserRole === "Alumno" ? "#fff" : COLOR_PRIMARY} 
+                  />
+                  <Text style={[styles.roleButtonText, newUserRole === "Alumno" && styles.roleButtonTextActive]}>
+                    Alumno
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.roleButton, newUserRole === "Profesor" && styles.roleButtonActive]}
+                  onPress={() => setNewUserRole("Profesor")}
+                >
+                  <FontAwesome5 
+                    name="chalkboard-teacher" 
+                    size={20} 
+                    color={newUserRole === "Profesor" ? "#fff" : COLOR_PRIMARY} 
+                  />
+                  <Text style={[styles.roleButtonText, newUserRole === "Profesor" && styles.roleButtonTextActive]}>
+                    Profesor
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Password */}
+          <View style={[
+            styles.inputContainerNew,
+            touched.password && errors.password ? styles.inputContainerError : null
+          ]}>
+            <FontAwesome5 name="lock" size={16} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputNew}
+              placeholder="Contraseña"
+              value={password}
+              onChangeText={(v) => handleChange("password", v)}
+              onFocus={() => setShowRules(true)}
+              onBlur={() => {
+                setShowRules(false);
+                handleBlur("password");
+              }}
+              secureTextEntry={!showPassword}
+              returnKeyType="next"
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={18} color="#888" />
+            </TouchableOpacity>
+          </View>
+          {touched.password && errors.password ? (
+            <Text style={styles.errorText}>{errors.password}</Text>
+          ) : null}
 
           {/* Reglas visibles solo al enfocar */}
           {showRules && (
@@ -330,123 +398,160 @@ const COLOR_PRIMARY = "#8D1E2A";
 const INPUT_BACKGROUND_COLOR = "#F5F5F5";
 
 const styles = StyleSheet.create({
-  // 🛑 CORRECCIÓN CLAVE: Usamos flexGrow y aseguramos centrado si el contenido es corto.
-  scrollContent: {
-    flexGrow: 1, // Permite que el contenido se extienda y se active el scroll
-    justifyContent: "center", // Asegura que la tarjeta se vea centrada verticalmente si hay espacio
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: 'transparent',
-  },
-  card: {
-    width: "100%",
-    maxWidth: 400,
-    backgroundColor: "rgba(255, 255, 255, 0.95)", // Fondo blanco semi-transparente
-    borderRadius: 8,
-    padding: 30,
-    alignItems: "center",
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  logo: {
-    width: 100,
-    height: 100,
-    marginBottom: 25,
-    resizeMode: "contain",
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    marginBottom: 30,
-    color: "#333",
-  },
-  inputContainerNew: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: INPUT_BACKGROUND_COLOR,
-    borderRadius: 5,
-    paddingHorizontal: 12,
-    height: 50,
-    marginBottom: 8,
-    width: "100%",
-    borderWidth: 1,
-    borderColor: INPUT_BACKGROUND_COLOR,
-  },
-  inputContainerError: {
-    borderColor: "#ff6b6b",
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  inputNew: {
-    flex: 1,
-    height: "100%",
-    fontSize: 16,
-    color: "#333",
-    paddingVertical: 0,
-  },
-  rulesContainer: {
-    alignSelf: "flex-start",
-    width: "100%",
-    marginBottom: 12,
-    paddingLeft: 12,
-  },
-  ruleTitle: {
-    fontWeight: "bold",
-    fontSize: 14,
-    marginBottom: 3,
-    color: "#333",
-  },
-  rule: {
-    fontSize: 13,
-  },
-  valid: {
-    color: "green",
-  },
-  invalid: {
-    color: "#888",
-  },
-  errorText: {
-    alignSelf: "flex-start",
-    color: "#ff6b6b",
-    fontSize: 12,
-    marginBottom: 6,
-    paddingLeft: 4,
-  },
-  buttonPrimary: {
-    backgroundColor: COLOR_PRIMARY,
-    paddingVertical: 15,
-    borderRadius: 5,
-    width: "100%",
-    alignItems: "center",
-    marginTop: 12,
-    marginBottom: 10,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  linkTextFooter: {
-    color: "#666",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  linkBold: {
-    fontWeight: "bold",
-    color: COLOR_PRIMARY,
-  },
-  linkLogin: {
-    alignSelf: "center",
-    marginBottom: 10,
-  },
-  footerText: {
-    marginTop: 24,
-    fontSize: 12,
-    color: "#888",
-    textAlign: "center",
-  },
+  pageContainer: {
+    flex: 1,
+    backgroundColor: COLOR_BACKGROUND,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  card: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 30,
+    alignItems: "center",
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 25,
+    resizeMode: "contain",
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 30,
+    color: "#333",
+  },
+  inputContainerNew: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: INPUT_BACKGROUND_COLOR,
+    borderRadius: 5,
+    paddingHorizontal: 12,
+    height: 50,
+    marginBottom: 8,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: INPUT_BACKGROUND_COLOR,
+  },
+  inputContainerError: {
+    borderColor: "#ff6b6b",
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  inputNew: {
+    flex: 1,
+    height: "100%",
+    fontSize: 16,
+    color: "#333",
+    paddingVertical: 0,
+  },
+  // Estilos para selector de rol
+  roleContainer: {
+    width: "100%",
+    marginBottom: 16,
+  },
+  roleLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+  },
+  roleButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  roleButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: COLOR_PRIMARY,
+    backgroundColor: "#fff",
+    gap: 8,
+  },
+  roleButtonActive: {
+    backgroundColor: COLOR_PRIMARY,
+  },
+  roleButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: COLOR_PRIMARY,
+  },
+  roleButtonTextActive: {
+    color: "#fff",
+  },
+  rulesContainer: {
+    alignSelf: "flex-start",
+    width: "100%",
+    marginBottom: 12,
+    paddingLeft: 12,
+  },
+  ruleTitle: {
+    fontWeight: "bold",
+    fontSize: 14,
+    marginBottom: 3,
+    color: "#333",
+  },
+  rule: {
+    fontSize: 13,
+  },
+  valid: {
+    color: "green",
+  },
+  invalid: {
+    color: "#888",
+  },
+  errorText: {
+    alignSelf: "flex-start",
+    color: "#ff6b6b",
+    fontSize: 12,
+    marginBottom: 6,
+    paddingLeft: 4,
+  },
+  buttonPrimary: {
+    backgroundColor: COLOR_PRIMARY,
+    paddingVertical: 15,
+    borderRadius: 5,
+    width: "100%",
+    alignItems: "center",
+    marginTop: 12,
+    marginBottom: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  linkTextFooter: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  linkBold: {
+    fontWeight: "bold",
+    color: COLOR_PRIMARY,
+  },
+  linkLogin: {
+    alignSelf: "center",
+    marginBottom: 10,
+  },
+  footerText: {
+    marginTop: 24,
+    fontSize: 12,
+    color: "#888",
+    textAlign: "center",
+  },
 });
