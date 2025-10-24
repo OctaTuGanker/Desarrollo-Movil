@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 
-// 🛑 1. IMPORTAR EL BACKGROUND WRAPPER
+// 1. IMPORTAR EL BACKGROUND WRAPPER
 import BackgroundWrapper from '../src/components/BackgroundWrapper'; 
 
 
@@ -94,7 +94,7 @@ export default function Admisiones() {
     };
 
     return (
-        // 🛑 2. ENVOLVER EL SAFEAREAVIEW CON EL BACKGROUND WRAPPER
+        // 2. ENVOLVER EL SAFEAREAVIEW CON EL BACKGROUND WRAPPER
         <BackgroundWrapper>
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView contentContainerStyle={styles.container}>
@@ -150,10 +150,10 @@ export default function Admisiones() {
 const COLOR_PRIMARY = '#922b21';
 
 const styles = StyleSheet.create({
-    // 🛑 AJUSTE: El fondo de safeArea DEBE ser transparente para ver el wrapper
+    // El fondo de safeArea DEBE ser transparente para ver el wrapper
     safeArea: { flex: 1, backgroundColor: 'transparent' }, 
     
-    // 🛑 AJUSTE: El ScrollView DEBE ser transparente.
+    // El ScrollView DEBE ser transparente.
     container: { padding: 20, backgroundColor: 'transparent' }, 
     
     header: {
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
         lineHeight: 20,
     },
     // --- Estilos para las Secciones de Contenido ---
-    // 🛑 AJUSTE: Fondo blanco para las secciones de contenido para legibilidad
+    // Fondo blanco para las secciones de contenido para legibilidad
     section: { 
         backgroundColor: 'rgba(255, 255, 255, 0.95)', 
         borderRadius: 8, 

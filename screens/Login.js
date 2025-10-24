@@ -1,5 +1,3 @@
-// screens/Login.js
-
 import React, { useState } from 'react';
 import { 
     View, 
@@ -23,7 +21,6 @@ import BackgroundWrapper from '../src/components/BackgroundWrapper';
 const COLOR_PRIMARY = '#8D1E2A';
 
 export default function Login({ navigation }) {
-    // ... (Tus estados se mantienen sin cambios)
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -33,7 +30,6 @@ export default function Login({ navigation }) {
     const validateField = (field, value) => {
         let error = '';
         if (field === 'email') error = validateEmail(value) || '';
-        // Se asegura que validatePassword exista y sea una función antes de llamarla
         if (field === 'password') error = validatePassword && typeof validatePassword === 'function' ? (validatePassword(value) || '') : (!value ? 'Debe ingresar su contraseña.' : '');
         setErrors(prev => ({ ...prev, [field]: error }));
         return !error;
@@ -48,7 +44,6 @@ export default function Login({ navigation }) {
         if (touched[field]) validateField(field, value);
     };
     
-    // 🛑 FUNCIÓN CORREGIDA: Lógica y Navegación
     const handleLogin = async () => {
         // 1. Ejecutar validaciones y marcar como tocados
         const emailOk = validateField('email', email);
@@ -64,15 +59,6 @@ export default function Login({ navigation }) {
         // 2. Lógica de Autenticación de Firebase
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            
-            // 🛑 CORRECCIÓN CLAVE: Navegar después del éxito
-            // Asumo que tu pantalla principal es 'Home' o 'MainTabs'.
-            // Usamos reset para que el usuario no pueda volver a la pantalla de Login con el botón de retroceso.
-            // Asegúrate que 'MainTabs' sea el nombre correcto de tu pantalla principal.
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Home' }], // O 'MainTabs' si ese es el nombre de tu pantalla principal
-            });
 
         } catch (error) {
             let errorMessage = "Hubo un problema al iniciar sesión.";
@@ -164,9 +150,6 @@ export default function Login({ navigation }) {
         </BackgroundWrapper>
     );
 }
-
-// --- ESTILOS CORREGIDOS (Se mantienen igual que en la versión anterior para mantener la estética) ---
-
 const styles = StyleSheet.create({
     errorText: { alignSelf: 'flex-start', color: '#ff6b6b', fontSize: 12, marginBottom: 12 },
     pageContainer: {
