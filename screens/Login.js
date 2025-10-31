@@ -1,3 +1,5 @@
+// screens/Login.js
+
 import React, { useState } from 'react';
 import { 
     View, 
@@ -18,6 +20,7 @@ import { showAlert } from '../utils/showAlert';
 // --- COMPONENTE DE PANTALLA DE LOGIN MEJORADO ---
 
 export default function Login({ navigation }) {
+    // ... (Tus estados se mantienen sin cambios)
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +30,7 @@ export default function Login({ navigation }) {
     const validateField = (field, value) => {
         let error = '';
         if (field === 'email') error = validateEmail(value) || '';
+        // Se asegura que validatePassword exista y sea una función antes de llamarla
         if (field === 'password') error = validatePassword && typeof validatePassword === 'function' ? (validatePassword(value) || '') : (!value ? 'Debe ingresar su contraseña.' : '');
         setErrors(prev => ({ ...prev, [field]: error }));
         return !error;
@@ -41,6 +45,7 @@ export default function Login({ navigation }) {
         if (touched[field]) validateField(field, value);
     };
     
+    // 🛑 FUNCIÓN CORREGIDA: Lógica y Navegación
     const handleLogin = async () => {
         // 1. Ejecutar validaciones y marcar como tocados
         const emailOk = validateField('email', email);
@@ -56,6 +61,15 @@ export default function Login({ navigation }) {
         // --- Lógica de Autenticación de Firebase (MANTENIDA) ---
         try {
             await signInWithEmailAndPassword(auth, email, password);
+            
+            // 🛑 CORRECCIÓN CLAVE: Navegar después del éxito
+            // Asumo que tu pantalla principal es 'Home' o 'MainTabs'.
+            // Usamos reset para que el usuario no pueda volver a la pantalla de Login con el botón de retroceso.
+            // Asegúrate que 'MainTabs' sea el nombre correcto de tu pantalla principal.
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Home' }], // O 'MainTabs' si ese es el nombre de tu pantalla principal
+            });
 
         } catch (error) {
             let errorMessage = "Hubo un problema al iniciar sesión.";
@@ -133,24 +147,22 @@ export default function Login({ navigation }) {
                         <Text style={styles.buttonText}>Iniciar Sesión</Text>
                     </TouchableOpacity>
 
-                {/* Enlace: ¿Olvidaste tu contraseña? */}
-                <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.linkForgotPassword}>
-                    <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
-                </TouchableOpacity>
-                
-                {/* Footer / Derechos de autor */}
-                <Text style={styles.footerText}>
-                    © 2025 - Instituto Superior Del Milagro. Todos los derechos reservados.
-                </Text>
-            </View>
-        </View>
+                    <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.linkForgotPassword}>
+                        <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
+                    </TouchableOpacity>
+                    
+                    <Text style={styles.footerText}>
+                        © 2025 - Instituto Superior Del Milagro. Todos los derechos reservados.
+                    </Text>
+                    
+                </View>
+            </ScrollView>
+            
+        </BackgroundWrapper>
     );
 }
 
-// --- ESTILOS MEJORADOS (COINCIDE CON EL DISEÑO DE TARJETA) ---
-
-const COLOR_PRIMARY = '#8D1E2A'; // El color vino/rojo oscuro del diseño
-const COLOR_BACKGROUND = '#F0F2F5'; // Fondo gris claro
+// --- ESTILOS CORREGIDOS (Se mantienen igual que en la versión anterior para mantener la estética) ---
 
 const styles = StyleSheet.create({
     errorText: { alignSelf: 'flex-start', color: '#ff6b6b', fontSize: 12, marginBottom: 12 },

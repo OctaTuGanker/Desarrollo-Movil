@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-// IMPORTAMOS EL BACKGROUND WRAPPER
+// 🛑 IMPORTAMOS EL BACKGROUND WRAPPER
 import BackgroundWrapper from '../src/components/BackgroundWrapper'; 
 
 const COLOR_PRIMARY = '#922b21'; // Color principal para coherencia
@@ -29,7 +29,7 @@ const noticiasData = [
 
 export default function VidaEstudiantil() {
     return (
-        // ENVOLVEMOS TODO EL CONTENIDO CON EL BACKGROUND WRAPPER
+        // 🛑 ENVOLVEMOS TODO EL CONTENIDO CON EL BACKGROUND WRAPPER
         <BackgroundWrapper>
             <ScrollView contentContainerStyle={styles.container}>
                 
@@ -89,14 +89,14 @@ const styles = StyleSheet.create({
     container: { 
         flexGrow: 1, 
         padding: 20, 
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent' // 🛑 TRANSPARENTE para ver el fondo
     },
     
     // ESTILOS DEL ENCABEZADO
     header: {
         alignItems: 'center', 
         marginBottom: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)', // Fondo claro para legibilidad
         padding: 20,
         borderRadius: 10,
     },
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: COLOR_PRIMARY,
         fontSize: 16,
-        width: 60,
+        width: 60, // Fija el ancho para alinear
     },
     calendarEvent: {
         fontSize: 16,

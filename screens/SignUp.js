@@ -1,149 +1,147 @@
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Image,
-  ScrollView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  Image,
+  ScrollView,
 } from "react-native";
 import { FontAwesome5, FontAwesome, Feather } from "@expo/vector-icons";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../src/config/firebaseConfig";
 import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import {
-  validateEmail,
-  validatePassword,
+  validateEmail,
+  validatePassword,
 } from "../utils/validation";
-import { useAuth } from "../contexts/AuthContext";
-import BackgroundWrapper from '../src/components/BackgroundWrapper';
+import { useAuth } from "../contexts/AuthContext"; // Importar el hook
+
+import BackgroundWrapper from '../src/components/BackgroundWrapper'; 
+
 
 export default function SignUp({ navigation }) {
-  const { user, role } = useAuth();
+  const { user, role } = useAuth(); // Obtener usuario y rol actual
   const [firstName, setFirstName] = useState("");
   const [lastName,  setLastName]  = useState("");
   const [email,     setEmail]     = useState("");
   const [password,  setPassword]  = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [newUserRole, setNewUserRole] = useState("Alumno");
+  const [newUserRole, setNewUserRole] = useState("Alumno"); // Rol del nuevo usuario
 
-  const [showPassword,        setShowPassword]        = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showRules,           setShowRules]           = useState(false);
+  const [errors, setErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  const [errors, setErrors] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-  });
+  const [touched, setTouched] = useState({
+    firstName: false,
+    lastName: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
 
-  const [touched, setTouched] = useState({
-    firstName: false,
-    lastName: false,
-    email: false,
-    password: false,
-    confirmPassword: false,
-  });
+  // Reglas visuales de contraseña
+  const isMinLength = password.length >= 6;
+  const hasUpper    = /[A-Z]/.test(password);
+  const hasLower    = /[a-z]/.test(password);
+  const hasNumber   = /\d/.test(password);
 
-  // Reglas visuales de contraseña
-  const isMinLength = password.length >= 6;
-  const hasUpper    = /[A-Z]/.test(password);
-  const hasLower    = /[a-z]/.test(password);
-  const hasNumber   = /\d/.test(password);
+  const validateField = (field, value) => {
+    let error = "";
 
-  const validateField = (field, value) => {
-    let error = "";
+    switch (field) {
+      case "firstName":
+        if (!value.trim()) error = "El nombre es obligatorio.";
+        else if (/[0-9]/.test(value)) error = "El nombre no puede llevar números."; 
+        else if (value.trim().length < 2) error = "Mínimo 2 caracteres.";
+        break;
+      case "lastName":
+        if (!value.trim()) error = "El apellido es obligatorio.";
+        else if (/[0-9]/.test(value)) error = "El apellido no puede llevar números.";
+        else if (value.trim().length < 2) error = "Mínimo 2 caracteres.";
+        break;
+      case "email":
+        error = validateEmail(value) || "";
+        break;
+      case "password":
+        error = validatePassword(value) || "";
+        break;
+      case "confirmPassword":
+        if (!value) error = "Debe confirmar su contraseña.";
+        else if (value !== password) error = "Las contraseñas no coinciden.";
+        break;
+      default:
+        break;
+    }
 
-    switch (field) {
-      case "firstName":
-        if (!value.trim()) error = "El nombre es obligatorio.";
-        else if (/[0-9]/.test(value)) error = "El nombre no puede llevar números."; 
-        else if (value.trim().length < 2) error = "Mínimo 2 caracteres.";
-        break;
-      case "lastName":
-        if (!value.trim()) error = "El apellido es obligatorio.";
-        else if (/[0-9]/.test(value)) error = "El apellido no puede llevar números.";
-        else if (value.trim().length < 2) error = "Mínimo 2 caracteres.";
-        break;
-      case "email":
-        error = validateEmail(value) || "";
-        break;
-      case "password":
-        error = validatePassword(value) || "";
-        break;
-      case "confirmPassword":
-        if (!value) error = "Debe confirmar su contraseña.";
-        else if (value !== password) error = "Las contraseñas no coinciden.";
-        break;
-      default:
-        break;
-    }
+    setErrors((prev) => ({ ...prev, [field]: error }));
+    return !error;
+  };
 
-    setErrors((prev) => ({ ...prev, [field]: error }));
-    return !error;
-  };
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const values = { firstName, lastName, email, password, confirmPassword };
+    validateField(field, values[field]);
+  };
 
-  const handleBlur = (field) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    const values = { firstName, lastName, email, password, confirmPassword };
-    validateField(field, values[field]);
-  };
+  const handleChange = (field, value) => {
+    let cleanValue = value;
+    
+    if (field === 'firstName' || field === 'lastName') {
+        cleanValue = value.replace(/[0-9]/g, '');
+    }
 
-  const handleChange = (field, value) => {
-    let cleanValue = value;
-    
-    if (field === 'firstName' || field === 'lastName') {
-        cleanValue = value.replace(/[0-9]/g, '');
-    }
+    switch (field) {
+      case "firstName":
+        setFirstName(cleanValue);
+        break;
+      case "lastName":
+        setLastName(cleanValue);
+        break;
+      case "email":
+        setEmail(value);
+        break;
+      case "password":
+        setPassword(value);
+        break;
+      case "confirmPassword":
+        setConfirmPassword(value);
+        break;
+      default:
+        break;
+    }
+    if (touched[field]) {
+      validateField(field, cleanValue);
+    }
+  };
 
-    switch (field) {
-      case "firstName":
-        setFirstName(cleanValue);
-        break;
-      case "lastName":
-        setLastName(cleanValue);
-        break;
-      case "email":
-        setEmail(value);
-        break;
-      case "password":
-        setPassword(value);
-        break;
-      case "confirmPassword":
-        setConfirmPassword(value);
-        break;
-      default:
-        break;
-    }
-    if (touched[field]) {
-      validateField(field, cleanValue);
-    }
-  };
+  const handleSignUp = async () => {
+    // Marcar todos como tocados
+    setTouched({
+      firstName: true,
+      lastName: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
+    });
 
-  const handleSignUp = async () => {
-    // Marcar todos como tocados
-    setTouched({
-      firstName: true,
-      lastName: true,
-      email: true,
-      password: true,
-      confirmPassword: true,
-    });
+    // Validar todos
+    const firstNameOk       = validateField("firstName", firstName);
+    const lastNameOk        = validateField("lastName", lastName);
+    const emailOk           = validateField("email", email);
+    const passwordOk        = validateField("password", password);
+    const confirmPasswordOk = validateField("confirmPassword", confirmPassword);
 
-    // Validar todos
-    const firstNameOk       = validateField("firstName", firstName);
-    const lastNameOk        = validateField("lastName", lastName);
-    const emailOk           = validateField("email", email);
-    const passwordOk        = validateField("password", password);
-    const confirmPasswordOk = validateField("confirmPassword", confirmPassword);
-
-    if (!firstNameOk || !lastNameOk || !emailOk || !passwordOk || !confirmPasswordOk) {
-      return;
-    }
+    if (!firstNameOk || !lastNameOk || !emailOk || !passwordOk || !confirmPasswordOk) {
+      return;
+    }
 
     try {
       // Crear usuario en Authentication
@@ -156,9 +154,9 @@ export default function SignUp({ navigation }) {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim().toLowerCase(),
-        role: newUserRole,
+        role: newUserRole, // Usa el rol seleccionado (Alumno por defecto, o Profesor si lo eligió un profesor)
         createdAt: serverTimestamp(),
-        ...(user && { createdBy: user.uid }),
+        ...(user && { createdBy: user.uid }), // Si hay usuario logueado, guarda quién lo creó
       });
 
       // Si un admin creó la cuenta, debe volver a loguearse
@@ -171,6 +169,7 @@ export default function SignUp({ navigation }) {
               text: "OK",
               onPress: async () => {
                 await auth.signOut();
+                // navigation.navigate("Login");
               },
             },
           ]
@@ -199,73 +198,75 @@ export default function SignUp({ navigation }) {
     }
   };
 
-  return (
-    <BackgroundWrapper>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <View style={styles.card}>
-          <Image source={require("../assets/logo.png")} style={styles.logo} />
-          <Text style={styles.title}>Crear cuenta</Text>
+  return (
+    // 🛑 ELIMINAMOS EL VIEW pageContainer y usamos BackgroundWrapper como raíz
+    <BackgroundWrapper>
+      {/* Usamos ScrollView para permitir el desplazamiento */}
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        <View style={styles.card}>
+          <Image source={require("../assets/logo.png")} style={styles.logo} />
+          <Text style={styles.title}>Crear cuenta</Text>
 
-          {/* Nombre */}
-          <View style={[
-            styles.inputContainerNew,
-            touched.firstName && errors.firstName ? styles.inputContainerError : null
-          ]}>
-            <FontAwesome name="user-o" size={18} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputNew}
-              placeholder="Nombre"
-              value={firstName}
-              onChangeText={(v) => handleChange("firstName", v)}
-              onBlur={() => handleBlur("firstName")}
-              returnKeyType="next"
-              keyboardType="default" 
-            />
-          </View>
-          {touched.firstName && errors.firstName ? (
-            <Text style={styles.errorText}>{errors.firstName}</Text>
-          ) : null}
+          {/* Nombre */}
+          <View style={[
+            styles.inputContainerNew,
+            touched.firstName && errors.firstName ? styles.inputContainerError : null
+          ]}>
+            <FontAwesome name="user-o" size={18} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputNew}
+              placeholder="Nombre"
+              value={firstName}
+              onChangeText={(v) => handleChange("firstName", v)}
+              onBlur={() => handleBlur("firstName")}
+              returnKeyType="next"
+              keyboardType="default" 
+            />
+          </View>
+          {touched.firstName && errors.firstName ? (
+            <Text style={styles.errorText}>{errors.firstName}</Text>
+          ) : null}
 
-          {/* Apellido */}
-          <View style={[
-            styles.inputContainerNew,
-            touched.lastName && errors.lastName ? styles.inputContainerError : null
-          ]}>
-            <FontAwesome name="user-o" size={18} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputNew}
-              placeholder="Apellido"
-              value={lastName}
-              onChangeText={(v) => handleChange("lastName", v)}
-              onBlur={() => handleBlur("lastName")}
-              returnKeyType="next"
-              keyboardType="default"
-            />
-          </View>
-          {touched.lastName && errors.lastName ? (
-            <Text style={styles.errorText}>{errors.lastName}</Text>
-          ) : null}
+          {/* Apellido */}
+          <View style={[
+            styles.inputContainerNew,
+            touched.lastName && errors.lastName ? styles.inputContainerError : null
+          ]}>
+            <FontAwesome name="user-o" size={18} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputNew}
+              placeholder="Apellido"
+              value={lastName}
+              onChangeText={(v) => handleChange("lastName", v)}
+              onBlur={() => handleBlur("lastName")}
+              returnKeyType="next"
+              keyboardType="default"
+            />
+          </View>
+          {touched.lastName && errors.lastName ? (
+            <Text style={styles.errorText}>{errors.lastName}</Text>
+          ) : null}
 
-          {/* Email */}
-          <View style={[
-            styles.inputContainerNew,
-            touched.email && errors.email ? styles.inputContainerError : null
-          ]}>
-            <Feather name="mail" size={18} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputNew}
-              placeholder="Correo electrónico"
-              value={email}
-              onChangeText={(v) => handleChange("email", v)}
-              onBlur={() => handleBlur("email")}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              returnKeyType="next"
-            />
-          </View>
-          {touched.email && errors.email ? (
-            <Text style={styles.errorText}>{errors.email}</Text>
-          ) : null}
+          {/* Email */}
+          <View style={[
+            styles.inputContainerNew,
+            touched.email && errors.email ? styles.inputContainerError : null
+          ]}>
+            <Feather name="mail" size={18} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputNew}
+              placeholder="Correo electrónico"
+              value={email}
+              onChangeText={(v) => handleChange("email", v)}
+              onBlur={() => handleBlur("email")}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              returnKeyType="next"
+            />
+          </View>
+          {touched.email && errors.email ? (
+            <Text style={styles.errorText}>{errors.email}</Text>
+          ) : null}
 
           {/* Selector de Rol - SOLO si hay un admin logueado */}
           {user && role === "Admin" && (
@@ -330,92 +331,90 @@ export default function SignUp({ navigation }) {
             <Text style={styles.errorText}>{errors.password}</Text>
           ) : null}
 
-          {/* Reglas visibles solo al enfocar */}
-          {showRules && (
-            <View style={styles.rulesContainer}>
-              <Text style={styles.ruleTitle}>Requisitos de Contraseña:</Text>
-              <Text style={[styles.rule, isMinLength ? styles.valid : styles.invalid]}>
-                - Mínimo 6 caracteres
-              </Text>
-              <Text style={[styles.rule, hasUpper ? styles.valid : styles.invalid]}>
-                - Usar al menos una letra mayúscula
-              </Text>
-              <Text style={[styles.rule, hasLower ? styles.valid : styles.invalid]}>
-                - Usar al menos una letra minúscula
-              </Text>
-              <Text style={[styles.rule, hasNumber ? styles.valid : styles.invalid]}>
-                - Incluir al menos un número
-              </Text>
-            </View>
-          )}
+          {/* Reglas visibles solo al enfocar */}
+          {showRules && (
+            <View style={styles.rulesContainer}>
+              <Text style={styles.ruleTitle}>Requisitos de Contraseña:</Text>
+              <Text style={[styles.rule, isMinLength ? styles.valid : styles.invalid]}>
+                - Mínimo 6 caracteres
+              </Text>
+              <Text style={[styles.rule, hasUpper ? styles.valid : styles.invalid]}>
+                - Usar al menos una letra mayúscula
+              </Text>
+              <Text style={[styles.rule, hasLower ? styles.valid : styles.invalid]}>
+                - Usar al menos una letra minúscula
+              </Text>
+              <Text style={[styles.rule, hasNumber ? styles.valid : styles.invalid]}>
+                - Incluir al menos un número
+              </Text>
+            </View>
+          )}
 
-          {/* Confirm Password */}
-          <View style={[
-            styles.inputContainerNew,
-            touched.confirmPassword && errors.confirmPassword ? styles.inputContainerError : null
-          ]}>
-            <FontAwesome5 name="lock" size={16} color="#888" style={styles.inputIcon} />
-            <TextInput
-              style={styles.inputNew}
-              placeholder="Confirmar contraseña"
-              value={confirmPassword}
-              onChangeText={(v) => handleChange("confirmPassword", v)}
-              onBlur={() => handleBlur("confirmPassword")}
-              secureTextEntry={!showConfirmPassword}
-              returnKeyType="done"
-            />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-              <FontAwesome name={showConfirmPassword ? "eye-slash" : "eye"} size={18} color="#888" />
-            </TouchableOpacity>
-          </View>
-          {touched.confirmPassword && errors.confirmPassword ? (
-            <Text style={styles.errorText}>{errors.confirmPassword}</Text>
-          ) : null}
+          {/* Confirm Password */}
+          <View style={[
+            styles.inputContainerNew,
+            touched.confirmPassword && errors.confirmPassword ? styles.inputContainerError : null
+          ]}>
+            <FontAwesome5 name="lock" size={16} color="#888" style={styles.inputIcon} />
+            <TextInput
+              style={styles.inputNew}
+              placeholder="Confirmar contraseña"
+              value={confirmPassword}
+              onChangeText={(v) => handleChange("confirmPassword", v)}
+              onBlur={() => handleBlur("confirmPassword")}
+              secureTextEntry={!showConfirmPassword}
+              returnKeyType="done"
+            />
+            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+              <FontAwesome name={showConfirmPassword ? "eye-slash" : "eye"} size={18} color="#888" />
+            </TouchableOpacity>
+          </View>
+          {touched.confirmPassword && errors.confirmPassword ? (
+            <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+          ) : null}
 
-          {/* Botón registrar */}
-          <TouchableOpacity style={styles.buttonPrimary} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Registrarse</Text>
-          </TouchableOpacity>
+          {/* Botón registrar */}
+          <TouchableOpacity style={styles.buttonPrimary} onPress={handleSignUp}>
+            <Text style={styles.buttonText}>Registrarse</Text>
+          </TouchableOpacity>
 
-          {/* Ir a Login */}
-          <TouchableOpacity onPress={() => navigation.navigate("Login")} style={styles.linkLogin}>
-            <Text style={styles.linkTextFooter}>
-              ¿Ya tienes una cuenta? <Text style={styles.linkBold}>Iniciar sesión</Text>
-            </Text>
-          </TouchableOpacity>
+          {/* Ir a Login */}
+          <TouchableOpacity onPress={() => navigation.navigate("Login")} style={styles.linkLogin}>
+            <Text style={styles.linkTextFooter}>
+              ¿Ya tienes una cuenta? <Text style={styles.linkBold}>Iniciar sesión</Text>
+            </Text>
+          </TouchableOpacity>
 
-          <Text style={styles.footerText}>
-            © 2025 - Instituto Superior Del Milagro. Todos los derechos reservados.
-          </Text>
-        </View>
-      </ScrollView>
-    </BackgroundWrapper>
-  );
+          <Text style={styles.footerText}>
+            © 2025 - Instituto Superior Del Milagro. Todos los derechos reservados.
+          </Text>
+        </View>
+      </ScrollView>
+    </BackgroundWrapper>
+  );
 }
 
 const COLOR_PRIMARY = "#8D1E2A";
 const INPUT_BACKGROUND_COLOR = "#F5F5F5";
 
 const styles = StyleSheet.create({
+  pageContainer: {
+    flex: 1,
+    backgroundColor: COLOR_BACKGROUND,
+  },
   scrollContent: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: 'transparent',
   },
   card: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 30,
     alignItems: "center",
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
   },
   logo: {
     width: 100,
@@ -454,6 +453,7 @@ const styles = StyleSheet.create({
     color: "#333",
     paddingVertical: 0,
   },
+  // Estilos para selector de rol
   roleContainer: {
     width: "100%",
     marginBottom: 16,

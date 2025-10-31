@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// IMPORTAR EL BACKGROUND WRAPPER
+// 🛑 IMPORTAR EL BACKGROUND WRAPPER
 import BackgroundWrapper from '../src/components/BackgroundWrapper'; 
 
 
@@ -25,6 +25,7 @@ if (Platform.OS === 'android') {
 }
 
 const cursosData = [
+    // ... (Tus datos de cursos se mantienen sin cambios)
     {
         id: '1',
         title: 'Profesorado de Matemática',
@@ -72,6 +73,7 @@ const cursosData = [
 ];
 
 const CursoCard = ({ curso, navigation }) => {
+    // ... (La lógica de la tarjeta se mantiene igual)
     const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const [isPlanExpanded, setIsPlanExpanded] = useState(false);
 
@@ -126,6 +128,7 @@ const CursoCard = ({ curso, navigation }) => {
                                 ))}
                                 <TouchableOpacity
                                     style={styles.inscriptionButton}
+                                    // Asegúrate de que 'Admisiones' sea el nombre correcto de tu ruta.
                                     onPress={() => navigation.jumpTo('Admisiones')} 
                                 >
                                     <Text style={styles.inscriptionButtonText}>Inscribirse</Text>
@@ -142,7 +145,7 @@ const CursoCard = ({ curso, navigation }) => {
 
 export default function Cursos({ navigation }) {
     return (
-        // ENVOLVER TODO EL CONTENIDO CON EL BACKGROUND WRAPPER
+        // 🛑 ENVOLVER TODO EL CONTENIDO CON EL BACKGROUND WRAPPER
         <BackgroundWrapper>
             <SafeAreaView style={styles.safeArea}>
                 <ScrollView contentContainerStyle={styles.container}>
@@ -168,12 +171,12 @@ const COLOR_PRIMARY = '#922b21';
 const COLOR_SUCCESS = '#28a745';
 
 const styles = StyleSheet.create({
-    // safeArea DEBE ser transparente para ver el wrapper
+    // 🛑 AJUSTE: safeArea DEBE ser transparente para ver el wrapper
     safeArea: { flex: 1, backgroundColor: 'transparent' }, 
-    // El ScrollView DEBE ser transparente
+    // 🛑 AJUSTE: El ScrollView DEBE ser transparente
     container: { paddingVertical: 20, paddingHorizontal: 15, backgroundColor: 'transparent' }, 
     
-    // Darle fondo blanco/claro al header para legibilidad
+    // 🛑 AJUSTE: Darle fondo blanco/claro al header para legibilidad
     header: { 
         marginBottom: 25, 
         alignItems: 'center',
@@ -184,11 +187,13 @@ const styles = StyleSheet.create({
     headerTitle: { fontSize: 28, fontWeight: 'bold', color: COLOR_PRIMARY },
     headerSubtitle: { fontSize: 16, color: '#555', marginTop: 5, textAlign: 'center' },
     
+    // Las tarjetas ya tienen fondo blanco, por lo que se mantienen legibles.
     card: {
         backgroundColor: '#fff', borderRadius: 12, marginBottom: 20, overflow: 'hidden',
         elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1, shadowRadius: 4,
     },
+    // ... (El resto de estilos de la tarjeta se mantienen sin cambios)
     cardImage: { width: '100%', height: 180 },
     cardContent: { padding: 20 },
     cardTitle: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 10 },

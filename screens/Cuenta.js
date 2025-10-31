@@ -2,29 +2,32 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'; 
 
-// Importamos el Background Wrapper y el sistema de autenticación
+// 🛑 Importamos el Background Wrapper y el sistema de autenticación
 import BackgroundWrapper from '../src/components/BackgroundWrapper'; 
 import { signOut } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
-import { useAuth } from "../contexts/AuthContext"; 
 
 const COLOR_PRIMARY = '#922b21'; // Color principal para coherencia
 
 // Datos de ejemplo. En una aplicación real, obtendrías esto de Firebase/Estado
 const mockUser = {
-    displayName: auth.currentUser?.name || "Estudiante Ejemplo",
+    displayName: auth.currentUser?.displayName || "Estudiante Ejemplo",
     email: auth.currentUser?.email || "usuario@instituto.edu.ar",
+    // Puedes agregar más datos si los tienes:
     carrera: "Desarrollo de Software",
     matricula: "2024-5001",
 };
 
 export default function Cuenta({ navigation }) {
-    const { user, role, userData } = useAuth();
-    mockUser.displayName = userData?.firstName + " " + userData?.lastName;
-    mockUser.email = userData?.email;
+
     const handleLogout = async () => {
         try {
             await signOut(auth);
+            // Redirige al usuario a la pantalla de Login y borra el historial
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }], 
+            });
         } catch (error) {
             console.error("Error al cerrar sesión:", error);
             Alert.alert("Error", "No se pudo cerrar la sesión correctamente.");
