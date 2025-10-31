@@ -7,7 +7,7 @@ import { auth } from '../src/config/firebaseConfig';
 import { validateEmail, validatePassword } from '../utils/validation';
 import { showAlert } from '../utils/showAlert';
 
-// --- COMPONENTE DE PANTALLA DE LOGIN MEJORADO ---
+// --- Login ---
 
 export default function Login({ navigation }) {
     const [email, setEmail] = useState('');
@@ -47,7 +47,7 @@ export default function Login({ navigation }) {
 
         if (!password) { showAlert("Error", "Debe ingresar su contraseña."); return; }
 
-        // --- Lógica de Autenticación de Firebase (MANTENIDA) ---
+        // --- Lógica de Autenticación de Firebase ---
         try {
             await signInWithEmailAndPassword(auth, email, password);
             //showAlert("Login exitoso", "Has iniciado sesión correctamente.");
@@ -144,7 +144,7 @@ export default function Login({ navigation }) {
     );
 }
 
-// --- ESTILOS MEJORADOS (COINCIDE CON EL DISEÑO DE TARJETA) ---
+// --- Estilo ---
 
 const COLOR_PRIMARY = '#8D1E2A'; // El color vino/rojo oscuro del diseño
 const COLOR_BACKGROUND = '#F0F2F5'; // Fondo gris claro
