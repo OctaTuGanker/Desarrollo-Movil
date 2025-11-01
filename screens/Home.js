@@ -75,7 +75,7 @@ export default function Home({ navigation }) {
     }
   };
 
-  // CORREGIDO: Usa getParent() para navegar al Stack padre
+
   const handleCreateUser = () => {
     setMenuVisible(false);
     navigation.getParent()?.navigate("SignUp");

@@ -14,7 +14,6 @@ export default function Profesores() {
   useEffect(() => {
     const fetchProfesores = async () => {
       try {
-        // CAMBIO: Usamos orderBy("email") porque siempre existe
         const q = query(
           collection(db, "users"),
           where("role", "==", "Profesor"),
