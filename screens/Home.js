@@ -10,14 +10,14 @@ import {
   Alert,
   Modal,
   TouchableWithoutFeedback,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { signOut } from "firebase/auth";
 import { auth } from "../src/config/firebaseConfig";
-// --- 1. IMPORTAR EL BACKGROUND WRAPPER ---
-import BackgroundWrapper from "../src/components/BackgroundWrapper"; 
+import BackgroundWrapper from "../src/components/BackgroundWrapper";
 import { FontAwesome5 } from "@expo/vector-icons";
-import { useAuth } from "../contexts/AuthContext"; 
+import { useAuth } from "../contexts/AuthContext";
 
 const TAB_HEIGHT = 65;
 
@@ -26,12 +26,21 @@ export default function Home({ navigation }) {
   const [menuVisible, setMenuVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const insets = useSafeAreaInsets();
-  
-  const { user, role, userData } = useAuth();
+
+  const { role, userData, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fff" }}>
+        <ActivityIndicator size="large" color="#922b21" />
+      </View>
+    );
+  }
 
   useEffect(() => {
-    // Lógica para ocultar/mostrar la barra de pestañas (tab bar)
-    navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
+    const parentNav = navigation.getParent();
+    if (parentNav) parentNav.setOptions({ tabBarStyle: { display: "none" } });
+
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -39,18 +48,20 @@ export default function Home({ navigation }) {
         useNativeDriver: true,
       }).start(() => {
         setShowWelcome(false);
-        // Lógica para restaurar la barra de pestañas
-        navigation.getParent()?.setOptions({
-          tabBarStyle: {
-            backgroundColor: "#fff",
-            borderTopWidth: 0.5,
-            borderTopColor: "#ccc",
-            height: 60 + insets.bottom,
-            paddingBottom: insets.bottom > 0 ? insets.bottom - 5 : 5,
-          },
-        });
+        if (parentNav) {
+          parentNav.setOptions({
+            tabBarStyle: {
+              backgroundColor: "#fff",
+              borderTopWidth: 0.5,
+              borderTopColor: "#ccc",
+              height: 60 + insets.bottom,
+              paddingBottom: insets.bottom > 0 ? insets.bottom - 5 : 5,
+            },
+          });
+        }
       });
     }, 2000);
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -59,18 +70,23 @@ export default function Home({ navigation }) {
     try {
       await signOut(auth);
       Alert.alert("Sesión cerrada", "Has cerrado sesión correctamente.");
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Hubo un problema al cerrar sesión.");
     }
   };
 
+  // CORREGIDO: Usa getParent() para navegar al Stack padre
   const handleCreateUser = () => {
     setMenuVisible(false);
-    navigation.navigate("SignUp");
+    navigation.getParent()?.navigate("SignUp");
+  };
+
+  const handleViewProfesores = () => {
+    setMenuVisible(false);
+    navigation.getParent()?.navigate("Profesores");
   };
 
   if (showWelcome) {
-    // 3. La pantalla de bienvenida se deja sin el BackgroundWrapper
     return (
       <Animated.View style={[styles.welcomeContainer, { opacity: fadeAnim }]}>
         <Image
@@ -85,12 +101,9 @@ export default function Home({ navigation }) {
     );
   }
 
-  // --- 2. REEMPLAZO DE SafeAreaView POR BackgroundWrapper ---
   return (
-    // Reemplazamos la SafeAreaView principal por el BackgroundWrapper.
-    <BackgroundWrapper> 
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-        
+    <BackgroundWrapper>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
         <ScrollView
           contentContainerStyle={[
             styles.scrollContainer,
@@ -101,7 +114,7 @@ export default function Home({ navigation }) {
           <View style={styles.header}>
             <Text style={styles.headerText}>ISDEM</Text>
             <TouchableOpacity onPress={() => setMenuVisible(true)}>
-              <Text style={styles.menuIcon}>☰</Text>
+              <Text style={styles.menuIcon}>Menú</Text>
             </TouchableOpacity>
           </View>
 
@@ -122,92 +135,78 @@ export default function Home({ navigation }) {
             </View>
           </View>
 
-          {/* Botones principales*/}
+          {/* Botones principales */}
           <View style={styles.buttonsContainer}>
-            <TouchableOpacity 
-              style={styles.card}
-              onPress={() => navigation.navigate('Cursos')}
-            >
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Cursos")}>
               <Text style={styles.cardText}>Nuestros Cursos</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.card}
-              onPress={() => navigation.navigate('Admisiones')}
-            >
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Admisiones")}>
               <Text style={styles.cardText}>Admisiones</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.card}
-              onPress={() => navigation.navigate('Vida Estudiantil')}
-            >
+            <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("Vida Estudiantil")}>
               <Text style={styles.cardText}>Vida Estudiantil</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
 
-{/* Modal del menú desplegable */}
-      <Modal
-        visible={menuVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setMenuVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.menuContainer}>
-                {/* Información del usuario */}
-                <View style={styles.userInfo}>
-                  <FontAwesome5
-                    name={role === "Profesor" ? "chalkboard-teacher" : "user-graduate"}
-                    size={24}
-                    color="#922b21"
-                  />
-                  <View style={styles.userDetails}>
-                    <Text style={styles.userName}>
-                      {userData?.firstName} {userData?.lastName}
-                    </Text>
-                    <Text style={styles.userRole}>{role}</Text>
+        {/* Modal del menú */}
+        <Modal
+          visible={menuVisible}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={() => setMenuVisible(false)}
+        >
+          <TouchableWithoutFeedback onPress={() => setMenuVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <View style={styles.menuContainer}>
+                  {/* Info usuario */}
+                  <View style={styles.userInfo}>
+                    <FontAwesome5
+                      name={role === "Profesor" ? "chalkboard-teacher" : "user-graduate"}
+                      size={24}
+                      color="#922b21"
+                    />
+                    <View style={styles.userDetails}>
+                      <Text style={styles.userName}>
+                        {userData?.firstName} {userData?.lastName}
+                      </Text>
+                      <Text style={styles.userRole}>{role}</Text>
+                    </View>
                   </View>
-                </View>
 
-                <View style={styles.divider} />
+                  <View style={styles.divider} />
 
-                {/* Opción: Crear usuario (solo para Profesores) */}
-                {(role === "Admin" || role === "Profesor") && (
-                  <TouchableOpacity
-                    style={styles.menuItem}
-                    onPress={handleCreateUser}
-                  >
-                    <FontAwesome5 name="user-plus" size={18} color="#333" />
-                    <Text style={styles.menuText}>Crear usuario</Text>
+                  {/* Crear usuario */}
+                  {(role === "Admin" || role === "Profesor") && (
+                    <TouchableOpacity style={styles.menuItem} onPress={handleCreateUser}>
+                      <FontAwesome5 name="user-plus" size={18} color="#333" />
+                      <Text style={styles.menuText}>Crear usuario</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Ver profesores */}
+                  <TouchableOpacity style={styles.menuItem} onPress={handleViewProfesores}>
+                    <FontAwesome5 name="chalkboard-teacher" size={18} color="#333" />
+                    <Text style={styles.menuText}>Ver profesores</Text>
                   </TouchableOpacity>
-                )}
 
-                {/* Opción: Cerrar sesión */}
-                <TouchableOpacity
-                  style={styles.menuItem}
-                  onPress={handleLogOut}
-                >
-                  <FontAwesome5 name="sign-out-alt" size={18} color="#d32f2f" />
-                  <Text style={[styles.menuText, styles.logoutText]}>
-                    Cerrar sesión
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+                  {/* Cerrar sesión */}
+                  <TouchableOpacity style={styles.menuItem} onPress={handleLogOut}>
+                    <FontAwesome5 name="sign-out-alt" size={18} color="#d32f2f" />
+                    <Text style={[styles.menuText, styles.logoutText]}>Cerrar sesión</Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </SafeAreaView>
     </BackgroundWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  // Pantalla de bienvenida
   welcomeContainer: {
     flex: 1,
     backgroundColor: "#fff",
@@ -225,150 +224,26 @@ const styles = StyleSheet.create({
     color: "#922b21",
     textAlign: "center",
   },
-  
-  // Scroll container
-  scrollContainer: {
-    flexGrow: 1,
-    backgroundColor: "transparent",
-  },
-  
-  // Header
-  header: {
-    backgroundColor: "#922b21",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-  },
-  headerText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-  menuIcon: {
-    color: "#fff",
-    fontSize: 24,
-  },
-  
-  // Banner
-  imageContainer: {
-    marginTop: 15,
-    alignSelf: "center",
-    borderRadius: 10,
-    overflow: "hidden",
-    width: "90%",
-  },
-  banner: {
-    width: "100%",
-    height: 180,
-    borderRadius: 10,
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 10,
-    backgroundColor: "rgba(0,0,0,0.3)",
-  },
-  bannerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  bannerSubtitle: {
-    color: "#fff",
-    fontSize: 14,
-    marginTop: 4,
-    textAlign: "center",
-  },
-  
-  // Botones/Cards
-  buttonsContainer: {
-    marginTop: 25,
-    alignItems: "center",
-  },
-  card: {
-    width: "85%",
-    paddingVertical: 15,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginVertical: 10,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    alignItems: "center",
-  },
-  cardText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  
-  // Menú desplegable
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-start",
-    alignItems: "flex-end",
-  },
-  menuContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    marginTop: 60,
-    marginRight: 15,
-    minWidth: 250,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: "#f5f5f5",
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-  },
-  userDetails: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
-  },
-  userRole: {
-    fontSize: 13,
-    color: "#666",
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#e0e0e0",
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
-  },
-  menuText: {
-    fontSize: 16,
-    color: "#333",
-    marginLeft: 12,
-  },
-  logoutText: {
-    color: "#d32f2f",
-    fontWeight: "500",
-  },
+  scrollContainer: { flexGrow: 1, backgroundColor: "transparent" },
+  header: { backgroundColor: "#922b21", flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 15, paddingHorizontal: 20 },
+  headerText: { color: "#fff", fontWeight: "bold", fontSize: 18 },
+  menuIcon: { color: "#fff", fontSize: 24 },
+  imageContainer: { marginTop: 15, alignSelf: "center", borderRadius: 10, overflow: "hidden", width: "90%" },
+  banner: { width: "100%", height: 180, borderRadius: 10 },
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "center", alignItems: "center", padding: 10, backgroundColor: "rgba(0,0,0,0.3)" },
+  bannerTitle: { color: "#fff", fontSize: 18, fontWeight: "bold", textAlign: "center" },
+  bannerSubtitle: { color: "#fff", fontSize: 14, marginTop: 4, textAlign: "center" },
+  buttonsContainer: { marginTop: 25, alignItems: "center" },
+  card: { width: "85%", paddingVertical: 15, backgroundColor: "#fff", borderRadius: 8, marginVertical: 10, elevation: 3, borderWidth: 1, borderColor: "#ddd", alignItems: "center" },
+  cardText: { fontSize: 16, fontWeight: "bold", color: "#333" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0, 0, 0, 0.5)", justifyContent: "flex-start", alignItems: "flex-end" },
+  menuContainer: { backgroundColor: "#fff", borderRadius: 8, marginTop: 60, marginRight: 15, minWidth: 250, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 5 },
+  userInfo: { flexDirection: "row", alignItems: "center", padding: 16, backgroundColor: "#f5f5f5", borderTopLeftRadius: 8, borderTopRightRadius: 8 },
+  userDetails: { marginLeft: 12, flex: 1 },
+  userName: { fontSize: 16, fontWeight: "bold", color: "#333" },
+  userRole: { fontSize: 13, color: "#666", marginTop: 2 },
+  divider: { height: 1, backgroundColor: "#e0e0e0" },
+  menuItem: { flexDirection: "row", alignItems: "center", padding: 16, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  menuText: { fontSize: 16, color: "#333", marginLeft: 12 },
+  logoutText: { color: "#d32f2f", fontWeight: "500" },
 });

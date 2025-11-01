@@ -13,9 +13,8 @@ import { FontAwesome5, FontAwesome, Feather } from '@expo/vector-icons';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../src/config/firebaseConfig';
 import { validateEmail, validatePassword } from '../utils/validation';
-import { showAlert } from '../utils/showAlert';
 
-// --- COMPONENTE DE PANTALLA DE LOGIN MEJORADO ---
+// --- Componte para logear---
 
 export default function Login({ navigation }) {
     const [email, setEmail] = useState('');
@@ -24,39 +23,50 @@ export default function Login({ navigation }) {
     const [errors, setErrors] = useState({ email: '', password: '' });
     const [touched, setTouched] = useState({ email: false, password: false });
 
+    // --- Validación de campos ---
     const validateField = (field, value) => {
         let error = '';
-        if (field === 'email') error = validateEmail(value) || '';
-        if (field === 'password') error = validatePassword && typeof validatePassword === 'function' ? (validatePassword(value) || '') : (!value ? 'Debe ingresar su contraseña.' : '');
+
+        if (field === 'email') {
+            if (!value) error = 'Debe ingresar su correo electrónico.';
+            else error = validateEmail(value) || '';
+        }
+
+        if (field === 'password') {
+            if (typeof validatePassword === 'function') {
+                error = validatePassword(value) || '';
+            } else {
+                error = !value ? 'Debe ingresar su contraseña.' : '';
+            }
+        }
+
         setErrors(prev => ({ ...prev, [field]: error }));
         return !error;
     };
+
     const handleBlur = (field) => {
         setTouched(prev => ({ ...prev, [field]: true }));
         validateField(field, field === 'email' ? email : password);
     };
+
     const handleChange = (field, value) => {
         if (field === 'email') setEmail(value);
         if (field === 'password') setPassword(value);
         if (touched[field]) validateField(field, value);
     };
-    
+
+    // --- Manejo de inicio de sesión ---
     const handleLogin = async () => {
-        // 1. Ejecutar validaciones y marcar como tocados
         const emailOk = validateField('email', email);
         const passOk = validateField('password', password);
         setTouched({ email: true, password: true });
 
-        // Si la validación falla (incluso la básica de campo vacío), sale.
-        if (!emailOk || !passOk) {
-            // Si hay errores, no intenta autenticar y la función termina aquí.
-            return;
-        }
+        if (!emailOk || !passOk) return; // Si falla la validación, no continúa.
 
-        // --- Lógica de Autenticación de Firebase (MANTENIDA) ---
         try {
             await signInWithEmailAndPassword(auth, email, password);
-
+            // Si llega aquí, el login fue exitoso
+            Alert.alert("Acceso exitoso", "Has iniciado sesión correctamente.");
         } catch (error) {
             let errorMessage = "Hubo un problema al iniciar sesión.";
             switch (error.code) {
@@ -73,90 +83,85 @@ export default function Login({ navigation }) {
                 default: 
                     console.error("Error de Firebase:", error);
             }
-            // Muestra una alerta con el error
             Alert.alert("Error de Acceso", errorMessage);
         }
     };
 
-
     return (
-        <BackgroundWrapper>
-            
-            <ScrollView contentContainerStyle={styles.pageContainerContent} style={styles.pageContainer}> 
+        <ScrollView contentContainerStyle={styles.pageContainerContent} style={styles.pageContainer}> 
+            <View style={styles.card}>
+                <Image 
+                    source={require('../assets/logo.png')} 
+                    style={styles.logo} 
+                />
+                <Text style={styles.title}>Iniciar Sesión</Text>
                 
-                <View style={styles.card}>
-                    
-                    <Image 
-                        source={require('../assets/logo.png')} 
-                        style={styles.logo} 
+                <Text style={styles.label}>Correo Electrónico</Text> 
+                <View style={[styles.inputWrapper, touched.email && errors.email ? styles.inputContainerError : null]}>
+                    <Feather name="mail" size={20} color="#888" style={styles.inputIcon}/>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="tu.correo@ejemplo.com"
+                        value={email}
+                        onChangeText={(v) => handleChange('email', v)}
+                        onBlur={() => handleBlur('email')}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
                     />
-                    <Text style={styles.title}>Iniciar Sesión</Text>
-                    
-                    <Text style={styles.label}>Correo Electrónico</Text> 
-                    
-                    <View style={[styles.inputWrapper, touched.email && errors.email ? styles.inputContainerError : null]}>
-                        <Feather name="mail" size={20} color="#888" style={styles.inputIcon}/>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="tu.correo@ejemplo.com"
-                            value={email}
-                            onChangeText={(v) => handleChange('email', v)}
-                            onBlur={() => handleBlur('email')}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-                    </View>
-                    {touched.email && errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
+                </View>
+                {touched.email && errors.email ? <Text style={styles.errorText}>{errors.email}</Text> : null}
 
-                    <Text style={styles.label}>Contraseña</Text>
-                    <View style={[styles.inputWrapper, touched.password && errors.password ? styles.inputContainerError : null]}>
-                        <FontAwesome5 name="lock" size={18} color="#888" style={styles.inputIcon} />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="**********"
-                            value={password}
-                            onChangeText={(v) => handleChange('password', v)}
-                            onBlur={() => handleBlur('password')}
-                            secureTextEntry={!showPassword}
-                        />
-                        <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.togglePassword}>
-                            <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#888" />
-                        </TouchableOpacity>
-                    </View>
-                    {touched.password && errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
-                    
-                    <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.linkRegister}>
-                        <Text style={styles.linkText}>¿No tienes cuenta? <Text style={styles.linkBold}>Registrarse.</Text></Text>
+                <Text style={styles.label}>Contraseña</Text>
+                <View style={[styles.inputWrapper, touched.password && errors.password ? styles.inputContainerError : null]}>
+                    <FontAwesome5 name="lock" size={18} color="#888" style={styles.inputIcon} />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="**********"
+                        value={password}
+                        onChangeText={(v) => handleChange('password', v)}
+                        onBlur={() => handleBlur('password')}
+                        secureTextEntry={!showPassword}
+                    />
+                    <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.togglePassword}>
+                        <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#888" />
                     </TouchableOpacity>
+                </View>
+                {touched.password && errors.password ? <Text style={styles.errorText}>{errors.password}</Text> : null}
+                
+                <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.linkRegister}>
+                    <Text style={styles.linkText}>¿No tienes cuenta? <Text style={styles.linkBold}>Registrarse.</Text></Text>
+                </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.buttonPrimary} onPress={handleLogin}>
-                        <Text style={styles.buttonText}>Iniciar Sesión</Text>
-                    </TouchableOpacity>
+                <TouchableOpacity style={styles.buttonPrimary} onPress={handleLogin}>
+                    <Text style={styles.buttonText}>Iniciar Sesión</Text>
+                </TouchableOpacity>
 
-                {/* Enlace: ¿Olvidaste tu contraseña? */}
                 <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')} style={styles.linkForgotPassword}>
                     <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
                 </TouchableOpacity>
                 
-                {/* Footer / Derechos de autor */}
                 <Text style={styles.footerText}>
                     © 2025 - Instituto Superior Del Milagro. Todos los derechos reservados.
                 </Text>
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
-// --- ESTILOS MEJORADOS (COINCIDE CON EL DISEÑO DE TARJETA) ---
+// --- Estilos ---
 
-const COLOR_PRIMARY = '#8D1E2A'; // El color vino/rojo oscuro del diseño
-const COLOR_BACKGROUND = '#F0F2F5'; // Fondo gris claro
+const COLOR_PRIMARY = '#8D1E2A'; // Color vino/rojo oscuro
 
 const styles = StyleSheet.create({
-    errorText: { alignSelf: 'flex-start', color: '#ff6b6b', fontSize: 12, marginBottom: 12 },
+    errorText: { 
+        alignSelf: 'flex-start', 
+        color: '#ff6b6b', 
+        fontSize: 12, 
+        marginBottom: 12 
+    },
     pageContainer: {
         flex: 1,
-        backgroundColor: 'transparent', 
+        backgroundColor: '#F0F2F5', 
     },
     pageContainerContent: { 
         flexGrow: 1, 
@@ -257,5 +262,8 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#888',
         textAlign: 'center',
+    },
+    inputContainerError: {
+        borderColor: '#ff6b6b',
     },
 });

@@ -26,7 +26,7 @@ const getAdmissionStatus = () => {
         title: '',
         message: '',
         icon: 'time-outline',
-        color: '#6c757d' // Color por defectogris
+        color: '#6c757d' 
     };
 
     switch (currentMonth) {
