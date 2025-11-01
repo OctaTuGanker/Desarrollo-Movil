@@ -124,7 +124,6 @@ const styles = StyleSheet.create({
         marginLeft: 10,
     },
 
-    // ESTILOS DE LA SECCIÓN DE OPCIONES
     optionsSection: {
         backgroundColor: 'rgba(255, 255, 255, 0.95)',
         width: '100%',

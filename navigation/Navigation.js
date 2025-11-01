@@ -6,10 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 
-// Context
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
-
-// Pantallas
 import Login from '../screens/Login';
 import SignUp from '../screens/SignUp';
 import Home from '../screens/Home';
@@ -17,11 +14,12 @@ import Cursos from '../screens/Cursos';
 import Admisiones from '../screens/Admisiones';
 import VidaEstudiantil from '../screens/VidaEstudiantil';
 import Cuenta from '../screens/Cuenta';
+import Profesores from '../screens/Profesores';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Menú inferior con íconos y safe area
+// Bottom Tabs (Inicio, Cursos, etc.)
 function BottomTabs() {
   const insets = useSafeAreaInsets();
 
@@ -60,11 +58,10 @@ function BottomTabs() {
   );
 }
 
-// Navegador interno que usa el contexto
+// Navegador principal
 function AppNavigator() {
   const { user, loading } = useAuth();
 
-  // Mostrar loading mientras se verifica la autenticación
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -73,26 +70,28 @@ function AppNavigator() {
     );
   }
 
+  // Pantallas según si hay usuario o no
+  const screens = !user
+    ? [
+        { name: 'Login', component: Login },
+        { name: 'SignUp', component: SignUp },
+      ]
+    : [
+        { name: 'MainTabs', component: BottomTabs },
+        { name: 'Profesores', component: Profesores },
+        { name: 'SignUp', component: SignUp }, // AÑADIDO: SignUp disponible cuando estás logueado
+      ];
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!user ? (
-        <>
-          <Stack.Screen name="Login" component={Login} />
-          <Stack.Screen name="SignUp" component={SignUp} />
-        </>
-      ) : (
-        <>
-          <Stack.Screen name="MainTabs" component={BottomTabs} />
-          {/* Se agrega SignUp y Login para poder acceder cuando estas logueado */}
-          <Stack.Screen name="SignUp" component={SignUp} />
-          {/* <Stack.Screen name="Login" component={Login} /> */}
-        </>
-      )}
+      {screens.map(s => (
+        <Stack.Screen key={s.name} name={s.name} component={s.component} />
+      ))}
     </Stack.Navigator>
   );
 }
 
-// Navegación principal con AuthProvider
+// App principal
 export default function Navigation() {
   return (
     <SafeAreaProvider>

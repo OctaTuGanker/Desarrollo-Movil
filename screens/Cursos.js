@@ -23,7 +23,7 @@ if (Platform.OS === 'android') {
         UIManager.setLayoutAnimationEnabledExperimental(true);
     }
 }
-
+//Carreras disponibles
 const cursosData = [
     {
         id: '1',
